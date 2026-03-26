@@ -1,70 +1,67 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { App as AntdApp, ConfigProvider, theme } from "antd";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@/styles/globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Philosopher } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Student XX-XXX-XXX",
   description: "sopra-fs26-template-client",
 };
 
+const philosopher = Philosopher({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-philosopher",
+});
+
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ConfigProvider
+      <html lang="en" className={philosopher.variable}>
+      <body>
+      <ConfigProvider
           theme={{
             algorithm: theme.defaultAlgorithm,
             token: {
-              // general theme options are set in token, meaning all primary elements (button, menu, ...) will have this color
-              colorPrimary: "#22426b", // selected input field boarder will have this color as well
-              borderRadius: 8,
-              colorText: "#fff",
-              fontSize: 16,
-
-              // Alias Token
-              colorBgContainer: "#16181D",
+              colorPrimary: "#8B5100",
+              borderRadius: 20,
+              colorText: "black",
+              fontSize: 18,
+              colorBgContainer: "#fff",
+              fontFamily: "var(--font-philosopher), serif",
             },
-            // if a component type needs special styling, setting here will override default options set in token
             components: {
+                Select: {
+                    colorTextPlaceholder: "#888888"
+                },
               Button: {
-                colorPrimary: "#75bd9d", // this will color all buttons in #75bd9d, overriding the default primaryColor #22426b set in token line 35
-                algorithm: true, // enable algorithm (redundant with line 33 but here for demo purposes)
+                colorPrimary: "#8B5100",
+                algorithm: true,
                 controlHeight: 38,
               },
               Input: {
-                colorBorder: "gray", // color boarder selected is not overridden but instead is set by primary color in line 35
+                colorBorder: "gray",
                 colorTextPlaceholder: "#888888",
-                algorithm: false, // disable algorithm (line 32)
+                algorithm: false,
               },
               Form: {
                 labelColor: "#fff",
-                algorithm: theme.defaultAlgorithm, // specify a specifc algorithm instead of true/false
+                algorithm: theme.defaultAlgorithm,
               },
               Card: {},
             },
           }}
-        >
-          <AntdRegistry>
-            <AntdApp>{children}</AntdApp>
-          </AntdRegistry>
-        </ConfigProvider>
+      >
+        <AntdRegistry>
+          <AntdApp>{children}</AntdApp>
+        </AntdRegistry>
+      </ConfigProvider>
       </body>
-    </html>
+      </html>
   );
 }
