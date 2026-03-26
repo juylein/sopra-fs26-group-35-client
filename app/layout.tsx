@@ -36,6 +36,9 @@ export default function RootLayout({
               fontFamily: "var(--font-philosopher), serif",
             },
             components: {
+                Select: {
+                    colorTextPlaceholder: "#888888"
+                },
               Button: {
                 colorPrimary: "#8B5100",
                 algorithm: true,

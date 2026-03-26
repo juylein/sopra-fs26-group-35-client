@@ -4,13 +4,20 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
-import { Button, Form, Input } from "antd";
+import { Button, Form, Input, Select } from "antd";  // 👈 added Select
+
+const GENRES = [
+    "Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance",
+    "Historical Fiction", "Horror", "Biography", "Self-Help",
+    "Non-Fiction", "Adventure", "Graphic Novel", "Poetry", "Crime",
+];
 
 interface RegisterFormValues {
     name: string;
     username: string;
     password: string;
     bio?: string;
+    genres?: string[];
 }
 
 const Register: React.FC = () => {
@@ -79,6 +86,19 @@ const Register: React.FC = () => {
                         <Input.TextArea
                             placeholder="Tell us a little about yourself..."
                             autoSize={{ minRows: 3, maxRows: 6 }}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="genres"
+                        label="Favourite Genres"
+                    >
+                        <Select
+                            mode="multiple"
+                            allowClear
+                            placeholder="Select your favourite genres..."
+                            options={GENRES.map((g) => ({ label: g, value: g }))}
+                            maxTagCount="responsive"
                         />
                     </Form.Item>
 

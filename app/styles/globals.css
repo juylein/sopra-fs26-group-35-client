@@ -146,11 +146,11 @@ a {
 
 /* Register page */
 .register-container {
-  width:40rem;
+  width: 50rem;
   height: 50rem;
   padding: 50px 50px;
   border-radius: 16px;
-  background: linear-gradient(180deg, #8B5100 0%, #251500 97.6%);
+
   font-size: 2rem !important;
   display: flex;
   flex-direction: column;
@@ -164,6 +164,7 @@ a {
   justify-content: center;
   min-height: 100vh;
   font-size: 1.5rem !important;
+  background: linear-gradient(180deg, #8B5100 0%, #251500 97.6%) !important;
 }
 
 .register-button {
@@ -182,4 +183,8 @@ a {
 .register-container .ant-input-affix-wrapper {
   display: flex !important;
   align-items: center !important;
+}
+
+.register-page .redirect-link {
+  color: white !important;
 }
