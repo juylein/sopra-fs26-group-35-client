@@ -37,7 +37,25 @@ const Register: React.FC = () => {
             router.push(`/users/${response.id}`);
         } catch (error) {
             if (error instanceof Error) {
-                alert(`Something went wrong during registration: ${error.message}`);
+                const message = error.message.toLowerCase();
+
+                if (message.includes("username")) {
+                    form.setFields([{
+                        name: "username",
+                        errors: ["This username is already taken."],
+                    }]);
+                } else if (message.includes("password")) {
+                    form.setFields([{
+                        name: "password",
+                        errors: ["Password does not meet requirements."],
+                    }]);
+                } else {
+                    form.setFields([{
+                        name: "username",
+                        errors: [`Registration failed: ${error.message}`],
+                    }]);
+                }
+
             } else {
                 console.error("An unknown error occurred during registration.");
             }
@@ -66,7 +84,12 @@ const Register: React.FC = () => {
                     <Form.Item
                         name="username"
                         label="Username"
-                        rules={[{ required: true, message: "Please input your username!" }]}
+                        rules={[
+                            { required: true, message: "Please input your username!" },
+                            { min: 3, message: "Username must be at least 3 characters." },
+                            { max: 20, message: "Username cannot exceed 20 characters." },
+                            { pattern: /^[a-zA-Z0-9_]+$/, message: "Only letters, numbers and underscores allowed." },
+                        ]}
                     >
                         <Input placeholder="Enter username" />
                     </Form.Item>
@@ -74,7 +97,13 @@ const Register: React.FC = () => {
                     <Form.Item
                         name="password"
                         label="Password"
-                        rules={[{ required: true, message: "Please input your password!" }]}
+                        rules={[
+                            { required: true, message: "Please input your password!" },
+                            { min: 8, message: "Password must be at least 8 characters." },
+                            { pattern: /[A-Z]/, message: "Password must contain at least one uppercase letter." },
+                            { pattern: /[0-9]/, message: "Password must contain at least one number." },
+                            { pattern: /[^a-zA-Z0-9]/, message: "Password must contain at least one special character." },
+                        ]}
                     >
                         <Input.Password placeholder="Enter password" />
                     </Form.Item>
