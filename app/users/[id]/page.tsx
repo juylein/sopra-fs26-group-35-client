@@ -1,23 +1,110 @@
-// your code here for S2 to display a single user profile after having clicked on it
-// each user has their own slug /[id] (/1, /2, /3, ...) and is displayed using this file
-// try to leverage the component library from antd by utilizing "Card" to display the individual user
-// import { Card } from "antd"; // similar to /app/users/page.tsx
+"use client"; 
 
-"use client";
-// For components that need React hooks and browser APIs,
-// SSR (server side rendering) has to be disabled.
-// Read more here: https://nextjs.org/docs/pages/building-your-application/rendering/server-side-rendering
+import React, { useEffect, useState } from "react";
+import { useRouter, usePathname, useParams } from "next/navigation";
+import { useApi } from "@/hooks/useApi";
+import { LayoutDashboard, BookOpen, Clock, Search, HelpCircle, Users, Share2, Rows,} from "lucide-react"; //for navigation buttons 
+import { RotatingLines } from "react-loader-spinner";
+import { toast, ToastContainer  } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-import React from "react";
+  const Dashboard: React.FC = () => {
+    const router = useRouter();
+    const apiService = useApi();
+    const params = useParams();
+    const userId = params.id;
+    const pathname = usePathname();
+    const textSize = "1.2rem";
+    const [loadingPath, setLoadingPath] = useState <string | null>(null);
+    const [dashboardData, setDashboardData] = useState<unknown>(null);
+    const [loadingData, setLoadingData] = useState<boolean>(false);
 
-const Profile: React.FC = () => {
-  return (
-    <div className="card-container">
-      <p>
-        <strong>SampleUser</strong>
-      </p>
+//Navigation Bar 
+    const menu = [
+      { name: "Dashboard", icon: LayoutDashboard, path: `/users/${userId}` },
+      { name: "Library", icon: BookOpen, path: "/library" },
+      { name: "Reading Session", icon: Clock, path: "/reading" },
+      { name: "Discover", icon: Search, path: "/discover" },
+      { name: "Quiz", icon: HelpCircle, path: "/quiz" },
+      { name: "Friends", icon: Users, path: "/friends" },
+      { name: "Shared Reading Session", icon: Share2, path: "/shared" },
+    ];
+
+const handleClick = (path: string) => {
+  if (pathname === path){
+    return;
+  }
+    try{
+        setLoadingPath(path);
+        router.push(path);
+    }
+    catch(error){
+        toast.error("Something went wrong", {
+            position: "top-center",
+            autoClose: 3000,
+          });
+    }
+  
+}
+
+useEffect(() => {
+  const fetchData = async () => {
+    setLoadingData(true)
+    try{
+      const data = await apiService.get(`/dashboard?userId=${userId}`);;
+      setDashboardData(data);
+    }
+    catch(error){
+      toast.error("Failed to load data");
+    }
+    finally{
+      setLoadingData(false);
+    }
+  }
+  fetchData()
+},[apiService]) ;
+
+return (
+    <div className="dashboard-container">
+      <div className="sidebar">
+        <h1 className="logo-title">
+          <span className="logo-book">Book</span>
+          <span className="logo-shelf">shelf</span>
+        </h1>
+
+        <div className="menu">
+          {menu.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={index}
+                onClick={() => handleClick(item.path)}
+                className="icon"
+              >
+                <Icon size={30} />
+                <span style={{ fontSize: textSize }}>{item.name}</span>
+              </div>
+            );
+          })}
+        </div>
+        </div>
+
+      <div className="loading-container">
+        {loadingPath && (
+          <RotatingLines
+            strokeColor="black"
+            strokeWidth="10"
+            animationDuration="0.6"
+            width="50"
+            visible={true}
+          />
+        )}
+      </div>
+      <ToastContainer 
+       toastClassName="custom-toast">
+       </ToastContainer>
     </div>
   );
 };
 
-export default Profile;
+export default Dashboard;
