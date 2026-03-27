@@ -11,17 +11,26 @@ export default function Home() {
     <div className={styles.page}>
       <main className={styles.main}>
         <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
+          className="logo"
+          src="/bookshelf-logo.svg"
+          alt="Bookshelf logo"
+          width={250}
+          height={98}
           priority
         />
 
         <p className="headline">
           Get ready to join the reading universe.
         </p>
+
+        <Image
+          className="bookshelf-landing"
+          src="/bookshelf.svg"
+          alt="bookshelf for landing page"
+          width={550}
+          height={208}
+        />
+
         < p className="subtitle">
           Track books, connect with friends,<br/>
           build your reading habit.

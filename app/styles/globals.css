@@ -43,6 +43,14 @@ a {
 }
 
 /* Landing Page */
+.logo {
+  align-self: center;
+}
+
+.bookshelf-landing {
+  align-self: center;
+}
+
 .headline {
   text-align: center;
   font-size: 3rem;
