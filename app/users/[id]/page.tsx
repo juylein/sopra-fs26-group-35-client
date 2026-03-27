@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname, useParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
-import { Button, Card, Table } from "antd";
-import type { TableProps } from "antd";
 import { LayoutDashboard, BookOpen, Clock, Search, HelpCircle, Users, Share2, Rows,} from "lucide-react"; //for navigation buttons 
 import { RotatingLines } from "react-loader-spinner";
 import { toast, ToastContainer  } from "react-toastify";
@@ -18,12 +16,12 @@ import "react-toastify/dist/ReactToastify.css";
     const pathname = usePathname();
     const textSize = "1.2rem";
     const [loadingPath, setLoadingPath] = useState <string | null>(null);
-    const [dashboardData, setDashboardData] = useState <any>(null);
+    const [dashboardData, setDashboardData] = useState<unknown>(null);
     const [loadingData, setLoadingData] = useState<boolean>(false);
 
 //Navigation Bar 
     const menu = [
-      { name: "Dashboard", icon: LayoutDashboard, path: "/users/${userId}" },
+      { name: "Dashboard", icon: LayoutDashboard, path: `/users/${userId}` },
       { name: "Library", icon: BookOpen, path: "/library" },
       { name: "Reading Session", icon: Clock, path: "/reading" },
       { name: "Discover", icon: Search, path: "/discover" },
@@ -53,7 +51,7 @@ useEffect(() => {
   const fetchData = async () => {
     setLoadingData(true)
     try{
-      const data = await apiService.get("/dashboard");
+      const data = await apiService.get(`/dashboard?userId=${userId}`);;
       setDashboardData(data);
     }
     catch(error){
