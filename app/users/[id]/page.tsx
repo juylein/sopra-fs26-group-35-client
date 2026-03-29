@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
-import Sidebar from "@/components/sidebar"; // new sidebar component
+import Sidebar from "@/components/sidebar";
 import { RotatingLines } from "react-loader-spinner";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -27,7 +27,7 @@ const Dashboard: React.FC = () => {
 
   const { id } = useParams(); // Get dynamic user ID from URL
   const [timerRunning, setTimerRunning] = useState(false); // State to track if timer is running
-  const [seconds, setSeconds] = useState(35 * 60 + 43); // Example: 35 minutes and 43 seconds in total
+  const [seconds, setSeconds] = useState(35 * 60 + 43);
   const [user, setUser] = useState<UserProfile | null>(null); // State for user profile data
   const { clear: clearToken } = useLocalStorage<string>("token", ""); // Hook to manage token in localStorage
   const [messageApi, contextHolder] = message.useMessage(); // Ant Design message API
