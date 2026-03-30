@@ -36,7 +36,7 @@ reason).
 |------------------| -------- | ------------------ | ------------------------------- | ----------------------------------- |
 | **@juylein**     | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
-| **[@githubUser2]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@missbo-cyber]**| [30.03.2026]   | [https://github.com/juylein/sopra-fs26-group-35-client/commit/c60d4ea8ce99a1c0f230b66dcb9f68ad87752c54] | [Navigation bar on the dashboard page to navigate between pages, loading animation and error message] | [It is relevent and crucial for the user to be able to navigate between different pages from the main dashboard/homepage] |
 |                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
