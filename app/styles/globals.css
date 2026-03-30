@@ -745,6 +745,15 @@ a {
   margin: 0;
 }
 
+.discover-shelf-added {
+  color: #6b7280;
+  cursor: default;
+}
+
+.discover-shelf-added:hover {
+  background: white;
+}
+
 /* ─── Search Bar ────────────────────────────────── */
 .discover-search-wrapper {
   display: flex;
@@ -777,7 +786,7 @@ a {
   border: none !important;
   border-radius: 7px !important;
   font-family: inherit !important;
-  font-size: 13px !important;
+  font-size: 1rem !important;
   height: 32px !important;
 }
 
@@ -800,7 +809,7 @@ a {
 }
 
 .discover-filter-label {
-  font-size: 13px;
+  font-size: 1rem !important;
   color: #7a6e5e;
   font-weight: 600;
   white-space: nowrap;
@@ -809,6 +818,15 @@ a {
 .discover-filter-select {
   width: 160px;
   font-family: 'Philosopher', serif !important;
+  font-size: 1rem !important;
+}
+
+.discover-filter-select .ant-select-selection-item {
+  font-size: 1rem !important;
+}
+
+.ant-select-item-option-content {
+  font-size: 1rem !important;
 }
 
 /* ─── Results ───────────────────────────────────── */
@@ -872,7 +890,7 @@ a {
 }
 
 .discover-book-title {
-  font-size: 15px;
+  font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 3px;
   white-space: nowrap;
@@ -881,19 +899,19 @@ a {
 }
 
 .discover-book-meta {
-  font-size: 12px;
+  font-size: 0.9rem;
   color: #3a3080;
   margin-bottom: 3px;
 }
 
 .discover-book-rating {
-  font-size: 12px;
+  font-size: 0.9rem;
   color: #c8a000;
   margin-bottom: 5px;
 }
 
 .discover-book-description {
-  font-size: 12px;
+  font-size: 0.9rem;
   color: #4a4030;
   line-height: 1.5;
   margin: 0;
@@ -913,7 +931,7 @@ a {
   border: none !important;
   border-radius: 8px !important;
   font-family: inherit !important;
-  font-size: 12px !important;
+  font-size: 0.95rem !important;
   width: 130px !important;
 }
 
@@ -923,7 +941,7 @@ a {
   border: 1px solid #c0bcd8 !important;
   border-radius: 8px !important;
   font-family: inherit !important;
-  font-size: 12px !important;
+  font-size: 0.95rem !important;
   width: 130px !important;
 }
 
@@ -984,7 +1002,7 @@ a {
   border-radius: 7px;
   padding: 6px 14px;
   font-family: 'Philosopher', serif;
-  font-size: 13px;
+  font-size: 1rem;
   color: #3a3030;
   cursor: pointer;
   transition: background 0.15s;
@@ -1003,4 +1021,56 @@ a {
   background: #3a3080 !important;
   color: #fff !important;
   border-color: #3a3080 !important;
+}
+
+.discover-manual-btn {
+  font-size: 1rem !important;
+}
+
+.manual-isbn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.manual-submit-btn.added {
+  background-color: #22c55e !important;
+  border-color: #22c55e !important;
+}
+
+.ant-modal .ant-form-item-label > label,
+.ant-modal .ant-form-item-required {
+  color: black !important;
+  font-size: 1.1rem !important;
+}
+
+.manual-book-modal .ant-modal-body {
+  padding-bottom: 2rem !important;
+}
+
+.ant-modal {
+  padding-bottom: 3rem !important;
+}
+
+.ant-modal .ant-input,
+.ant-modal .ant-input-number,
+.ant-modal .ant-select .ant-select-selector,
+.ant-modal .ant-input-affix-wrapper {
+  border-color: #d1d5db !important;
+}
+
+.ant-modal .ant-input:focus,
+.ant-modal .ant-input-number-focused,
+.ant-modal .ant-select-focused .ant-select-selector,
+.ant-modal .ant-input-affix-wrapper-focused {
+  border-color: #a07850 !important;
+  box-shadow: 0 0 0 2px rgba(160, 120, 80, 0.2) !important;
+}
+
+.ant-modal-header {
+  padding-bottom: 1rem !important;
 }
