@@ -1074,3 +1074,16 @@ a {
 .ant-modal-header {
   padding-bottom: 1rem !important;
 }
+
+/* ─── Library Manual Buttons ────────────────────── */
+.library-manual-btn {
+  font-size: 1rem !important;
+  background: #3a3080 !important; 
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 9px 18px !important;
+  font-family: inherit !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+}
