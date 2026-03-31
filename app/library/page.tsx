@@ -10,13 +10,33 @@ import { Button, message } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
 
 
+interface Book {
+  id: number;
+  googleId: string | null;
+  name: string;
+  authors: string[];
+  pages: number | null;
+  releaseYear: number | null;
+  genre: string | null;
+  description: string | null;
+  coverUrl: string | null;
+}
+
+interface Shelf {
+  id: number;
+  name: string;
+  books: Book[];
+}
+
+
 const Library: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
 
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
-  const [libraryData, setLibraryData] = useState<unknown>(null);
+  // const [libraryData, setLibraryData] = useState<unknown>(null);
   const [loadingData, setLoadingData] = useState<boolean>(false);
+  const [shelves, setShelves] = useState<Shelf[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
   const [shelfName, setShelfName] = useState<string>("");
 
@@ -26,20 +46,20 @@ const Library: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchShelves = async () => {
       setLoadingData(true);
       try {
-        const data = await apiService.get(`/dashboard?userId=${id}`); // change this part to a correct call later
-        setLibraryData(data);
+        const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+        setShelves(data);
       } catch (error) {
-        toast.error("Failed to load data");
+        toast.error("Failed to load shelves");
       } finally {
         setLoadingData(false);
       }
     };
 
-    if (id) fetchData();
-  }, [apiService, id]);
+    if (userId) fetchShelves();
+  }, [apiService, userId]);
 
   const handleCreateNewShelf = async () => {
     if (!shelfName.trim()) {
@@ -48,16 +68,35 @@ const Library: React.FC = () => {
     }
 
     try {
-      await apiService.post("/shelves", { name: shelfName }); //also this one to a correct call 
+      await apiService.post(`/users/${userId}/library/shelves`, { name: shelfName }); 
       messageApi.success("Shelf created!");
       setModalIsOpen(false);
       setShelfName("");
+
+      // Refresh shelves
+      const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+      setShelves(data);
+
     } catch (error) {
       console.error(error);
       messageApi.error("Error creating shelf");
     }
   };
 
+
+  const handleAddBookToShelf = async (book: Book, shelfId: number) => {
+    try {
+      await apiService.post(`/users/${userId}/library/shelves/${shelfId}/books`, book);
+      messageApi.success(`Added "${book.name}" to shelf!`);
+
+      // Refresh shelves
+      const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+      setShelves(data);
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to add book to shelf");
+    }
+  };
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -71,20 +110,29 @@ const Library: React.FC = () => {
         router.push("/login");
     }
 };
-  const BOOKS = [
-    { title: "War and Peace", color: "#8b4a20" },
-    { title: "Pride and Prejudice", color: "#3a5a8b" },
-    { title: "Alice in Wonderland", color: "#2a6a3a" },
-    { title: "Roald Dahl", color: "#c8a84b" },
-    { title: "Frankenstein", color: "#5a5a5a" },
-    { title: "Dune", color: "#7a5a20" },
-    { title: "Name of the Wind", color: "#3a6a5a" },
-    { title: "The Great Gatsby", color: "#3a5a8b" },
-    { title: "Twilight", color: "#2a2a2a" },
-    { title: "Crime and Punishment", color: "#8b1a1a" },
-    { title: "Harry Potter", color: "#2a3a7a" },
-    { title: "The Hobbit", color: "#4a6a2a" },
+  // const BOOKS = [
+  //   { title: "War and Peace", color: "#8b4a20" },
+  //   { title: "Pride and Prejudice", color: "#3a5a8b" },
+  //   { title: "Alice in Wonderland", color: "#2a6a3a" },
+  //   { title: "Roald Dahl", color: "#c8a84b" },
+  //   { title: "Frankenstein", color: "#5a5a5a" },
+  //   { title: "Dune", color: "#7a5a20" },
+  //   { title: "Name of the Wind", color: "#3a6a5a" },
+  //   { title: "The Great Gatsby", color: "#3a5a8b" },
+  //   { title: "Twilight", color: "#2a2a2a" },
+  //   { title: "Crime and Punishment", color: "#8b1a1a" },
+  //   { title: "Harry Potter", color: "#2a3a7a" },
+  //   { title: "The Hobbit", color: "#4a6a2a" },
+  // ];
+
+  const BOOKS: Book[] = [
+    { id: 1, googleId: null, name: "War and Peace", authors: ["Tolstoy"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
+    { id: 2, googleId: null, name: "Pride and Prejudice", authors: ["Austen"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
+    { id: 3, googleId: null, name: "Alice in Wonderland", authors: ["Carroll"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
   ];
+
+  const toReadShelf = shelves.find(s => s.name === "To Read");
+  const otherShelves = shelves.filter(s => s.name !== "To Read");
 
   return (
     <div className="library-container">
@@ -109,7 +157,7 @@ const Library: React.FC = () => {
               <div className="library-title">Library</div>
             </div>
 
-            {/* Sections */}
+            {/* Sections
             {["Recent Readings", "To Read Pile", "My Shelf #1"].map((section, idx) => (
               <div key={idx} className="section">
                 <div className="section-title">{section}</div>
@@ -126,6 +174,52 @@ const Library: React.FC = () => {
                   ))}
                 </div>
               </div>
+            ))} */}
+
+            {/* User Shelves */}
+            {shelves.map((shelf) => (
+              <div key={shelf.id} className="section">
+                <div className="section-title">{shelf.name}</div>
+                <div className="book-row">
+                  {shelf.books.map((book) => (
+                    <div
+                      key={book.id}
+                      title={book.name}
+                      className="book"
+                      style={{ background: "#3a5a8b", cursor: "pointer" }}
+                      onClick={() => router.push(`/books/${book.id}`)}
+                    >
+                      {book.coverUrl ? (
+                        <img
+                          src={book.coverUrl}
+                          alt={book.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
+                        />
+                      ) : (
+                        book.name.split(" ").slice(0, 2).join(" ")
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add book button */}
+                  <div
+                      className="book"
+                      style={{
+                        background: "#e8e0cc",
+                        border: "2px dashed #c8b898",
+                        color: "#8a7d6a",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 24,
+                        cursor: "pointer"
+                      }}
+                      onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                    >
+                      +
+                  </div>
+                </div>
+              </div>
             ))}
 
             {/* Create Shelf */}
@@ -138,14 +232,14 @@ const Library: React.FC = () => {
               </button>
             </div>
 
-            {/* Data */}
+            {/* Data
             <div className="data-grid">
               {loadingData ? (
                 <p>Loading data...</p>
               ) : (
-                <pre>{JSON.stringify(libraryData, null, 2)}</pre>
+                <pre>{JSON.stringify(shelves, null, 2)}</pre>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
 

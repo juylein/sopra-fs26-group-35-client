@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { Button, Select, Modal, Input, Form, InputNumber } from "antd";
@@ -80,6 +81,9 @@ const BOOKS_PER_PAGE = 10;
 const Discover: React.FC = () => {
     const router = useRouter();
     const apiService = useApi();
+
+    const searchParams = useSearchParams();
+    const preselectedShelfId = searchParams.get("shelfId");
 
     const [query, setQuery] = useState("");
     const [books, setBooks] = useState<GoogleBook[]>([]);
@@ -338,6 +342,12 @@ const Discover: React.FC = () => {
                         <Button className="discover-manual-btn" onClick={openManualModal}>+ Add Manually</Button>
                     </div>
 
+                    {preselectedShelfId && (
+                    <div style={{ marginBottom: 10, fontSize: 17, color: "#000000" }}>
+                        Adding books to selected shelf
+                    </div>
+                    )}
+
                     <div className="discover-filter-bar">
                         <div className="discover-filter-group">
                             <span className="discover-filter-label">Sort</span>
@@ -407,8 +417,15 @@ const Discover: React.FC = () => {
                                                 disabled={isAdded}
                                                 onClick={() => {
                                                     if (isAdded) return;
-                                                    fetchShelves();
-                                                    setOpenDropdownId(openDropdownId === book.id ? null : book.id);
+
+                                                    if (preselectedShelfId) {
+                                                        console.log("Adding to preselected shelf:", preselectedShelfId); // testing log
+                                                        console.log("token:", localStorage.getItem("token")); // testing log 
+                                                        handleAddToShelf(book, Number(preselectedShelfId));
+                                                    } else {
+                                                        fetchShelves();
+                                                        setOpenDropdownId(openDropdownId === book.id ? null : book.id);
+                                                    }
                                                 }}
                                             >
                                                 {isAdded ? "✓ Added!" : "Add to Shelf ▾"}
