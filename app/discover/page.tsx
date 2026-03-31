@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
@@ -548,4 +548,10 @@ const Discover: React.FC = () => {
     );
 };
 
-export default Discover;
+const DiscoverPage: React.FC = () => (
+    <Suspense fallback={<div>Loading...</div>}>
+        <Discover />
+    </Suspense>
+);
+
+export default DiscoverPage;
