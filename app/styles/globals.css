@@ -925,6 +925,10 @@ a {
   align-items: flex-end;
 }
 
+.discover-add-btn-wrapper {
+  position: relative;
+}
+
 .discover-add-btn {
   background: #3a3080 !important;
   color: #fff !important;

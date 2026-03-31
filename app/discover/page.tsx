@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { Button, Select, Modal, Input, Form, InputNumber } from "antd";
+import { Button, Select, Modal, Input, Form, InputNumber, message } from "antd";
 import Sidebar from "@/components/sidebar";
 import { SearchOutlined } from "@ant-design/icons";
 
@@ -80,6 +81,10 @@ const BOOKS_PER_PAGE = 10;
 const Discover: React.FC = () => {
     const router = useRouter();
     const apiService = useApi();
+    const [messageApi, contextHolder] = message.useMessage();
+
+    const searchParams = useSearchParams();
+    const preselectedShelfId = searchParams.get("shelfId");
 
     const [query, setQuery] = useState("");
     const [books, setBooks] = useState<GoogleBook[]>([]);
@@ -161,13 +166,8 @@ const Discover: React.FC = () => {
     const fetchShelves = async () => {
         if (shelves.length > 0) return;
         try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/library`,
-                { headers: { Authorization: token ?? "" } }
-            );
-            const data = await res.json();
-            setShelves(data.shelves ?? []);
+            const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+            setShelves(data);
         } catch (error) {
             console.error("Failed to fetch shelves:", error);
         }
@@ -177,27 +177,20 @@ const Discover: React.FC = () => {
         setAddingToShelf(book.id);
         const info = book.volumeInfo;
         try {
-            const token = localStorage.getItem("token");
-            await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/library/shelves/${shelfId}/books`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", Authorization: token ?? "" },
-                    body: JSON.stringify({
-                        googleId: book.id,
-                        name: info.title,
-                        authors: info.authors ?? [],
-                        pages: info.pageCount ?? null,
-                        releaseYear: info.publishedDate ? parseInt(info.publishedDate.slice(0, 4)) : null,
-                        genre: info.categories?.[0] ?? null,
-                        description: info.description ?? null,
-                    }),
-                }
-            );
+            await apiService.post(`/users/${userId}/library/shelves/${shelfId}/books`, {
+                googleId: book.id,
+                name: info.title,
+                authors: info.authors ?? [],
+                pages: info.pageCount ?? null,
+                releaseYear: info.publishedDate ? parseInt(info.publishedDate.slice(0, 4)) : null,
+                genre: info.categories?.[0] ?? null,
+                description: info.description ?? null,
+            });
             setAddedBooks((prev) => new Set(prev).add(`${book.id}-${shelfId}`));
-            setOpenDropdownId(null);
+            messageApi.success(`"${info.title}" added to shelf!`);
         } catch (error) {
             console.error("Failed to add book to shelf:", error);
+            messageApi.error("Failed to add book. Please try again.");
         } finally {
             setAddingToShelf(null);
         }
@@ -234,24 +227,17 @@ const Discover: React.FC = () => {
         try {
             const values = await manualForm.validateFields();
             setManualAdding(true);
-            const token = localStorage.getItem("token");
-            await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/library/shelves/${values.shelfId}/books`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", Authorization: token ?? "" },
-                    body: JSON.stringify({
-                        googleId: null,
-                        name: values.name,
-                        authors: values.authors ? values.authors.split(",").map((a: string) => a.trim()) : [],
-                        pages: values.pages ?? null,
-                        releaseYear: values.releaseYear ?? null,
-                        genre: values.genre ?? null,
-                        description: values.description ?? null,
-                    }),
-                }
-            );
+            await apiService.post(`/users/${userId}/library/shelves/${values.shelfId}/books`, {
+                googleId: null,
+                name: values.name,
+                authors: values.authors ? values.authors.split(",").map((a: string) => a.trim()) : [],
+                pages: values.pages ?? null,
+                releaseYear: values.releaseYear ?? null,
+                genre: values.genre ?? null,
+                description: values.description ?? null,
+            });
             setManualAdded(true);
+            messageApi.success(`"${values.name}" added to shelf!`);
             setTimeout(() => {
                 setManualAdded(false);
                 setManualModalOpen(false);
@@ -260,6 +246,7 @@ const Discover: React.FC = () => {
             }, 1500);
         } catch (error) {
             console.error("Failed to add manual book:", error);
+            messageApi.error("Failed to add book. Please try again.");
         } finally {
             setManualAdding(false);
         }
@@ -300,7 +287,15 @@ const Discover: React.FC = () => {
 
     useEffect(() => {
         const handleClickOutside = () => setOpenDropdownId(null);
-        if (openDropdownId) document.addEventListener("click", handleClickOutside);
+        if (openDropdownId) {
+            const timer = setTimeout(() => {
+                document.addEventListener("click", handleClickOutside);
+            }, 0);
+            return () => {
+                clearTimeout(timer);
+                document.removeEventListener("click", handleClickOutside);
+            };
+        }
         return () => document.removeEventListener("click", handleClickOutside);
     }, [openDropdownId]);
 
@@ -314,6 +309,7 @@ const Discover: React.FC = () => {
 
     return (
         <div className="dashboard-root">
+            {contextHolder}
             <Sidebar />
 
             <div className="dashboard-topbar">
@@ -337,6 +333,12 @@ const Discover: React.FC = () => {
                         <Button className="discover-search-btn" onClick={handleSearch}>Search</Button>
                         <Button className="discover-manual-btn" onClick={openManualModal}>+ Add Manually</Button>
                     </div>
+
+                    {preselectedShelfId && (
+                        <div style={{ marginBottom: 10, fontSize: 17, color: "#000000" }}>
+                            Adding books to selected shelf
+                        </div>
+                    )}
 
                     <div className="discover-filter-bar">
                         <div className="discover-filter-group">
@@ -401,17 +403,22 @@ const Discover: React.FC = () => {
                                     </div>
 
                                     <div className="discover-book-actions">
-                                        <div className="discover-add-btn-wrapper" onClick={(e) => e.stopPropagation()}>
+                                        <div className="discover-add-btn-wrapper">
                                             <Button
                                                 className={`discover-add-btn${isAdded ? " added" : ""}`}
                                                 disabled={isAdded}
-                                                onClick={() => {
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
                                                     if (isAdded) return;
-                                                    fetchShelves();
-                                                    setOpenDropdownId(openDropdownId === book.id ? null : book.id);
+                                                    if (preselectedShelfId) {
+                                                        handleAddToShelf(book, Number(preselectedShelfId));
+                                                    } else {
+                                                        await fetchShelves();
+                                                        setOpenDropdownId(openDropdownId === book.id ? null : book.id);
+                                                    }
                                                 }}
                                             >
-                                                {isAdded ? "✓ Added!" : "Add to Shelf ▾"}
+                                                {isAdded ? "✓ Added!" : preselectedShelfId ? "Add to Shelf" : "Add to Shelf ▾"}
                                             </Button>
                                             {openDropdownId === book.id && !isAdded && (
                                                 <div className="discover-shelf-dropdown">
@@ -424,7 +431,8 @@ const Discover: React.FC = () => {
                                                                 <div
                                                                     key={shelf.id}
                                                                     className={`discover-shelf-option${isAddedToShelf ? " discover-shelf-added" : ""}`}
-                                                                    onClick={() => {
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
                                                                         if (isAddedToShelf) return;
                                                                         handleAddToShelf(book, shelf.id);
                                                                     }}
@@ -459,7 +467,6 @@ const Discover: React.FC = () => {
                             <button className="discover-page-btn" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>Next →</button>
                         </div>
                     )}
-
                 </div>
             </div>
 
@@ -477,7 +484,6 @@ const Discover: React.FC = () => {
                 width={520}
             >
                 <Form form={manualForm} layout="vertical">
-
                     <Form.Item label={<>ISBN <span className="manual-isbn-hint">(optional — auto-fills fields below)</span></>}>
                         <div className="manual-isbn-row">
                             <Input
@@ -536,11 +542,16 @@ const Discover: React.FC = () => {
                     >
                         {manualAdded ? "✓ Book Added!" : "Add Book"}
                     </Button>
-
                 </Form>
             </Modal>
         </div>
     );
 };
 
-export default Discover;
+const DiscoverPage: React.FC = () => (
+    <Suspense fallback={<div>Loading...</div>}>
+        <Discover />
+    </Suspense>
+);
+
+export default DiscoverPage;
