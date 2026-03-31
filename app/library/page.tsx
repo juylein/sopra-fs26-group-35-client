@@ -114,9 +114,6 @@ const Library: React.FC = () => {
     { id: 3, googleId: null, name: "Alice in Wonderland", authors: ["Carroll"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
   ];
 
-  const toReadShelf = shelves.find(s => s.name === "To Read");
-  const otherShelves = shelves.filter(s => s.name !== "To Read");
-
   return (
     <div className="library-container">
       <Sidebar />
