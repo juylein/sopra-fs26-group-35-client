@@ -5,6 +5,7 @@ import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button, Form, Input } from "antd";
+import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 
 interface LoginFormValues {
   username: string;
@@ -15,6 +16,7 @@ const Login: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const [form] = Form.useForm();
+  const { handleErrorMessage } = useHandleErrorMessage();
   const {
     set: setToken,
   } = useLocalStorage<string>("token", "");
@@ -31,12 +33,8 @@ const Login: React.FC = () => {
       if (response.id) { setUserId(String(response.id))}
       router.push(`/users/${response.id}`);
 
-    } catch (error) {
-      if (error instanceof Error) {
-        alert(`Something went wrong during the login:\n${error.message}`);
-      } else {
-        console.error("An unknown error occurred during login.");
-      }
+    }  catch (error) {
+      handleErrorMessage(error);
     }
   };
 
