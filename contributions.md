@@ -38,8 +38,8 @@ reason).
 |                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@missbo-cyber]**| [30.03.2026]   | [https://github.com/juylein/sopra-fs26-group-35-client/commit/c60d4ea8ce99a1c0f230b66dcb9f68ad87752c54] | [Navigation bar on the dashboard page to navigate between pages, loading animation and error message] | [It is relevent and crucial for the user to be able to navigate between different pages from the main dashboard/homepage] |
 |                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
-| **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **@vanmey** | 28.03.2026   | https://github.com/juylein/sopra-fs26-group-35-server/commit/52d4e559061332016e9437e85f82650615a0d2f4 | create GET .../library endpoint, auto-create "To Read" shelf | It returns all the shelves with the books which will be needed for the frontends library page. |
+|                  | 29.03.2026   | https://github.com/juylein/sopra-fs26-group-35-server/commit/265b0b262974ddd2ca1ba61d52cee243a7efa4ee | create POST .../shelves endpoint, auto-create "Recent Readings" shelf | A shelf gets created with a given name which is a main feature.|
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                  | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 
