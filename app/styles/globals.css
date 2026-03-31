@@ -1145,6 +1145,7 @@ a {
   height: 40px;
   width: 90px;
   margin-left: 16px;
+  transition: background 0.2s;
 }
 
 .primary-btn {
@@ -1156,6 +1157,21 @@ a {
   font-family: inherit !important;
   font-size: 13px !important;
   font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Delete bookshelf */
+.delete-bookshelf-btn {
+  background: #8b1a1a !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  height: 40px !important;
+  width: 90px !important;
+  margin-left: 16px !important;
   cursor: pointer;
   transition: background 0.2s;
 }

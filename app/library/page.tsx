@@ -8,6 +8,7 @@ import { RotatingLines } from "react-loader-spinner";
 import { toast, ToastContainer } from "react-toastify";
 import { Button, message } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
+import { DeleteOutlined } from "@ant-design/icons";
 
 
 interface Book {
@@ -83,18 +84,14 @@ const Library: React.FC = () => {
     }
   };
 
-
-  const handleAddBookToShelf = async (book: Book, shelfId: number) => {
+  const handleDeleteShelf = async (shelfId: number) => {
     try {
-      await apiService.post(`/users/${userId}/library/shelves/${shelfId}/books`, book);
-      messageApi.success(`Added "${book.name}" to shelf!`);
-
-      // Refresh shelves
-      const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
-      setShelves(data);
+      await apiService.delete(`/users/${userId}/library/shelves/${shelfId}`); // to be changed
+      messageApi.success("Shelf deleted!");
+      setShelves((prev) => prev.filter((s) => s.id !== shelfId));
     } catch (error) {
       console.error(error);
-      messageApi.error("Failed to add book to shelf");
+      messageApi.error("Failed to delete shelf");
     }
   };
 
@@ -110,29 +107,12 @@ const Library: React.FC = () => {
         router.push("/login");
     }
 };
-  // const BOOKS = [
-  //   { title: "War and Peace", color: "#8b4a20" },
-  //   { title: "Pride and Prejudice", color: "#3a5a8b" },
-  //   { title: "Alice in Wonderland", color: "#2a6a3a" },
-  //   { title: "Roald Dahl", color: "#c8a84b" },
-  //   { title: "Frankenstein", color: "#5a5a5a" },
-  //   { title: "Dune", color: "#7a5a20" },
-  //   { title: "Name of the Wind", color: "#3a6a5a" },
-  //   { title: "The Great Gatsby", color: "#3a5a8b" },
-  //   { title: "Twilight", color: "#2a2a2a" },
-  //   { title: "Crime and Punishment", color: "#8b1a1a" },
-  //   { title: "Harry Potter", color: "#2a3a7a" },
-  //   { title: "The Hobbit", color: "#4a6a2a" },
-  // ];
 
   const BOOKS: Book[] = [
     { id: 1, googleId: null, name: "War and Peace", authors: ["Tolstoy"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
     { id: 2, googleId: null, name: "Pride and Prejudice", authors: ["Austen"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
     { id: 3, googleId: null, name: "Alice in Wonderland", authors: ["Carroll"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
   ];
-
-  const toReadShelf = shelves.find(s => s.name === "To Read");
-  const otherShelves = shelves.filter(s => s.name !== "To Read");
 
   return (
     <div className="library-container">
@@ -142,7 +122,7 @@ const Library: React.FC = () => {
       <div className="topbar">
         <input className="search-input" placeholder="Search books..." />
 
-        <Button onClick={handleLogout} className="logout-btn">
+        <Button onClick={handleLogout} className="dashboard-logout-btn">
           Logout
         </Button>
       </div>
@@ -153,34 +133,36 @@ const Library: React.FC = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
             {/* Header */}
-            <div className="section">
+            <div style={{ padding: 0, border: "none", background: "transparent" }}>
               <div className="library-title">Library</div>
+              <p className="library-description" style={{ fontSize: 16, color: "#555" }}>
+                Your personal collection of books. Browse, add, or manage your shelves and discover new reads.
+              </p>
             </div>
-
-            {/* Sections
-            {["Recent Readings", "To Read Pile", "My Shelf #1"].map((section, idx) => (
-              <div key={idx} className="section">
-                <div className="section-title">{section}</div>
-                <div className="book-row">
-                  {BOOKS.map((b, i) => (
-                    <div
-                      key={i}
-                      title={b.title}
-                      className="book"
-                      style={{ background: b.color }}
-                    >
-                      {b.title.split(" ").slice(0, 2).join(" ")}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))} */}
 
             {/* User Shelves */}
             {shelves.map((shelf) => (
-              <div key={shelf.id} className="section">
+              <div key={shelf.id} className="section"
+              style={{ position: "relative", paddingTop: 20 }} >
                 <div className="section-title">{shelf.name}</div>
-                <div className="book-row">
+                <div className="bookshelf-shelf">
+
+                {/* Delete button for user-created shelves */}
+                {shelf.name !== "To Read" && shelf.name !== "Recent Readings" && shelf.name !== "Read" && (
+                  <button
+                    onClick={() => handleDeleteShelf(shelf.id)}
+                    className="delete-bookshelf-btn"
+                    title="Delete Bookshelf"
+                    style={{
+                      position: "absolute",
+                      top: 10,
+                      right: 25
+                    }}
+                  >
+                    Delete Bookshelf
+                  </button>
+                )}
+
                   {shelf.books.map((book) => (
                     <div
                       key={book.id}
@@ -219,6 +201,7 @@ const Library: React.FC = () => {
                       +
                   </div>
                 </div>
+                <div className="bookshelf-count">{shelf.books.length} books</div>
               </div>
             ))}
 
@@ -228,7 +211,7 @@ const Library: React.FC = () => {
                 className="primary-btn"
                 onClick={() => setModalIsOpen(true)}
               >
-                Create New Shelf
+                + Create New Shelf
               </button>
             </div>
 

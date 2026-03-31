@@ -182,7 +182,7 @@ const Dashboard: React.FC = () => {
                     {/* Recent Readings */}
                     <div className="recent-readings-card">
                         <div className="recent-readings-title">Recent Readings</div>
-                        <div className="recent-readings-scroll">
+                        <div className="bookshelf-shelf">
                             {BOOKS.map((b, i) => (
                                 <div key={i} title={b.title} className="book-spine-sm" style={{ background: b.color }}>
                                     {b.title.split(" ").slice(0, 2).join(" ")}
