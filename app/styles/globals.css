@@ -410,7 +410,7 @@ a {
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #e8e0cc;
-  margin-left: 72px; /* adjust depending on avatar size */
+  margin-left: 80px; /* adjust depending on avatar size */
 }
 
 .profile-bio-label {
