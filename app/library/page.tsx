@@ -40,6 +40,8 @@ const Library: React.FC = () => {
   const [shelves, setShelves] = useState<Shelf[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
   const [shelfName, setShelfName] = useState<string>("");
+  const [editingShelfId, setEditingShelfId] = useState<number | null>(null);
+  const isDefaultShelf = (name: string) => ["To Read", "Recent Readings", "Read"].includes(name);
 
   const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
@@ -95,6 +97,28 @@ const Library: React.FC = () => {
     }
   };
 
+  const handleRemoveBook = async (shelfId: number, bookId: number) => {
+  try {
+    await apiService.delete(
+      `/users/${userId}/library/shelves/${shelfId}/books/${bookId}`
+    );
+
+    // Update UI instantly
+    setShelves((prev) =>
+      prev.map((s) =>
+        s.id === shelfId
+          ? { ...s, books: s.books.filter((b) => b.id !== bookId) }
+          : s
+      )
+    );
+
+    messageApi.success("Book removed");
+  } catch (error) {
+    console.error(error);
+    messageApi.error("Failed to remove book");
+  }
+};
+
   const handleLogout = async (): Promise<void> => {
     try {
         if (!userId) { router.push("/login"); return; }
@@ -145,27 +169,52 @@ const Library: React.FC = () => {
               <div key={shelf.id} className="section"
               style={{ position: "relative", paddingTop: 20 }} >
                 <div className="section-title">{shelf.name}</div>
-                <div className="bookshelf-shelf">
-
-                {/* Delete button for user-created shelves */}
-                {shelf.name !== "To Read" && shelf.name !== "Recent Readings" && shelf.name !== "Read" && (
-                  <button
-                    onClick={() => handleDeleteShelf(shelf.id)}
-                    className="delete-bookshelf-btn"
-                    title="Delete Bookshelf"
-                    style={{
+                {/* Edit & Delete Buttons, delete only for user-created shelves */}
+                <button
+                  onClick={() => setEditingShelfId((prev) => (prev === shelf.id ? null : shelf.id))}
+                  className="edit-bookshelf-btn"
+                  style={{
                       position: "absolute",
                       top: 10,
-                      right: 25
-                    }}
-                  >
-                    Delete Bookshelf
-                  </button>
-                )}
+                      right: 120
+                    }}>
+                  {editingShelfId === shelf.id ? "Done" : "Edit"}
+                </button>
+                
+                {/* Delete button greyed out for default shelves */}  
+                <button
+                  onClick={() => {
+                    if (!isDefaultShelf(shelf.name)) {
+                      handleDeleteShelf(shelf.id);
+                    }
+                  }}
+                  className="delete-bookshelf-btn"
+                  title={
+                    isDefaultShelf(shelf.name)
+                      ? "Default shelves cannot be deleted"
+                      : "Delete Bookshelf"
+                  }
+                  style={{
+                    position: "absolute",
+                    top: 10,
+                    right: 25,
+                    background: isDefaultShelf(shelf.name) ? "#ccc" : "#d32f2f",
+                    color: isDefaultShelf(shelf.name) ? "#666" : "#fff",
+                    cursor: isDefaultShelf(shelf.name) ? "not-allowed" : "pointer",
+                    opacity: isDefaultShelf(shelf.name) ? 0.7 : 1,
+                  }}
+                  disabled={isDefaultShelf(shelf.name)}
+                >
+                  Delete Bookshelf
+                </button>
+                <div className="bookshelf-shelf">
 
                   {shelf.books.map((book) => (
+                  <div
+                    key={book.id}
+                    style={{ position: "relative" }} // important for overlay button
+                  >
                     <div
-                      key={book.id}
                       title={book.name}
                       className="book"
                       style={{ background: "#3a5a8b", cursor: "pointer" }}
@@ -175,13 +224,44 @@ const Library: React.FC = () => {
                         <img
                           src={book.coverUrl}
                           alt={book.name}
-                          style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: 3,
+                          }}
                         />
                       ) : (
                         book.name.split(" ").slice(0, 2).join(" ")
                       )}
                     </div>
-                  ))}
+
+                    {/* DELETE BUTTON (only in edit mode) */}
+                    {editingShelfId === shelf.id && (
+                      <button
+                        onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, book.id); }}
+                        style={{
+                          position: "absolute",
+                          top: 4,
+                          right: 4,
+                          background: "#d32f2f",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "50%",
+                          width: 20,
+                          height: 20,
+                          fontSize: 12,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
 
                   {/* Add book button */}
                   <div

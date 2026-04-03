@@ -1207,6 +1207,21 @@ a {
   transition: background 0.2s;
 }
 
+/* Edit bookshelf */
+.edit-bookshelf-btn {
+  background: #1D6E27 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  height: 40px !important;
+  width: 90px !important;
+  margin-left: 16px !important;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
 .primary-btn:hover {
   background: #2a2060;
 }
