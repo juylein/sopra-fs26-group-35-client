@@ -115,31 +115,65 @@ const Dashboard: React.FC = () => {
 
                     {/* Profile Card */}
                     <div className="db-card">
-                        <div className="profile-header">
-                            <div className="profile-avatar">
-                                {user?.name?.[0]?.toUpperCase() ?? "U"}
-                            </div>
-                            <div className="profile-info">
-                                <h2 className="profile-name">{user?.name ?? "..."}</h2>
-                                <div className="profile-meta">
-                                    @{user?.username ?? "..."} · Member since{" "}
-                                    {user?.creationDate
-                                        ? new Date(user.creationDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-                                        : "..."}
-                                </div>
-                            </div>
-                            <Button className="profile-edit-btn" onClick={() => router.push(`/users/${id}/edit`)}>
-                                Edit Profile
-                            </Button>
+
+                    {/* Row 1: avatar + name/meta + edit button */}
+                    <div className="profile-header">
+                        <div className="profile-avatar">
+                        {user?.name?.[0]?.toUpperCase() ?? "U"}
                         </div>
-                        <div className="profile-stats">
-                            {[["34", "books read"], ["12,983", "pages read"], ["32", "points"], ["4", "friends"]].map(([val, label], i) => (
-                                <div key={i} className="profile-stat-cell">
-                                    {val}
-                                    <div className="profile-stat-label">{label}</div>
-                                </div>
-                            ))}
+                        <div className="profile-info">
+                        <h2 className="profile-name">{user?.name ?? "..."}</h2>
+                        <div className="profile-meta">
+                            @{user?.username ?? "..."} · Member since{" "}
+                            {user?.creationDate
+                            ? new Date(user.creationDate).toLocaleDateString("en-US", {
+                                year: "numeric", month: "long", day: "numeric",
+                                })
+                            : "..."}
                         </div>
+                        </div>
+                        <Button
+                        className="profile-edit-btn"
+                        onClick={() => router.push(`/users/${id}/edit`)}
+                        >
+                        Edit Profile
+                        </Button>
+                    </div>
+
+                    {/* Row 2: bio */}
+                    <div className="profile-bio-row">
+                    <div className="profile-bio-label">Bio:</div>
+                    <div className="profile-bio-content">
+                        {user?.bio ? (
+                        user.bio
+                        ) : (
+                        <span style={{ color: "#bbb" }}>
+                            No bio yet —{" "}
+                            <span
+                            style={{ color: "#c4903a", cursor: "pointer", textDecoration: "underline" }}
+                            onClick={() => router.push(`/users/${id}/edit`)}
+                            >
+                            add one
+                            </span>
+                        </span>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* Row 3: stat cells */}
+                    <div className="profile-stats">
+                        {[
+                        ["34", "books read"],
+                        ["12,983", "pages read"],
+                        ["32", "points"],
+                        ["4", "friends"],
+                        ].map(([val, label], i) => (
+                        <div key={i} className="profile-stat-cell">
+                            {val}
+                            <div className="profile-stat-label">{label}</div>
+                        </div>
+                        ))}
+                    </div>
                     </div>
 
                     {/* Bookshelf */}

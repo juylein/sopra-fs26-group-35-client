@@ -393,6 +393,37 @@ a {
   font-family: inherit !important;
   font-size: 13px !important;
 }
+/* 
+.profile-bio {
+  font-size: 0.88rem;
+  color: #5a4e3a;
+  font-style: italic;
+  margin-top: 6px;
+  line-height: 1.5;
+} */
+
+.profile-bio-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 15px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e0cc;
+  margin-left: 72px; /* adjust depending on avatar size */
+}
+
+.profile-bio-label {
+  font-weight: 600;
+  color: #7a6e5e;
+  white-space: nowrap;
+}
+
+.profile-bio-content {
+  color: #333;
+  line-height: 1.4;
+}
+
 
 .profile-stats {
   display: grid;
