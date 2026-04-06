@@ -7,6 +7,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
+import { toast, ToastContainer } from "react-toastify";
 
 // ── Placeholder data (replace with real API calls when backend is ready) ──────
 
@@ -118,7 +119,12 @@ const SharedReadingSession: React.FC = () => {
         setRunning(false);
         // TODO: PATCH /sessions/shared/:sessionId { endedAt, finalPage: currentPage }
         // TODO: close WebSocket
-        alert(`Session ended. You read for ${formatTime(seconds)}.`);
+        
+        
+    toast.success(`Session ended. You read for ${formatTime(seconds)}.`, {
+        className: "session-toast", 
+        progressClassName: "session-toast-progress",
+    });
         setView("lobby");
         setSeconds(0);
         setSelectedBook(null);
@@ -411,6 +417,9 @@ const SharedReadingSession: React.FC = () => {
 
                 </div>
             </div>
+            <ToastContainer
+                position="top-center"
+/>
         </div>
     );
 };

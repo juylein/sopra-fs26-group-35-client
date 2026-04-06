@@ -326,6 +326,11 @@ a {
   font-size: 14px;
   flex: 1;
   max-width: 400px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  width: 80%;
 }
 
 .dashboard-logout-btn {
@@ -1323,4 +1328,42 @@ a {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 999;
+}
+
+/* Friends page  */
+.search-add-input {
+  flex: 1; 
+}
+
+/* Avatar container */
+.avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+
+/* Toasts for sessions */
+.session-toast{
+  background-color: #fffaf3;  
+  color: #3e2f1c;             
+  border: 1px solid #e6d3a3;
+  font-size: 0.9rem;
+  border-radius: 0.5rem;
+  padding: 10px 15px;
+}
+
+.session-toast-progress {
+  background: #b45309; 
 }
