@@ -160,7 +160,27 @@ const Dashboard: React.FC = () => {
                     </div>
                     </div>
 
-                    {/* Row 3: stat cells */}
+                    {/* Row 3: genres */}
+                    <div className="profile-bio-row">
+                    <div className="profile-bio-label">Favourite genre:</div>
+                    <div className="profile-bio-content">
+                        {user?.genres ? (
+                        user.genres.join(", ")
+                        ) : (
+                        <span style={{ color: "#bbb" }}>
+                            No favourite genres yet —{" "}
+                            <span
+                            style={{ color: "#c4903a", cursor: "pointer", textDecoration: "underline" }}
+                            onClick={() => router.push(`/users/${id}/edit`)}
+                            >
+                            add them
+                            </span>
+                        </span>
+                        )}
+                    </div>
+                    </div>
+
+                    {/* Row 4: stat cells */}
                     <div className="profile-stats">
                         {[
                         ["34", "books read"],

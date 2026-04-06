@@ -7,6 +7,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
+import { toast, ToastContainer } from "react-toastify";
 
 const BOOKS = [
     { title: "Wuthering Heights", author: "Emily Brontë", color: "#2a2116", page: 244, total: 359 },
@@ -94,7 +95,10 @@ const ReadingSession: React.FC = () => {
         // e.g. apiService.post(`/users/${userId}/sessions`, {
         //   bookId, startPage, endPage: currentPage, duration: seconds, date: new Date()
         // })
-        alert(`Session logged! You read for ${formatTime(seconds)}.`);
+        toast.success(`Session logged! You read for ${formatTime(seconds)}.`, {
+            className: "session-toast", 
+            progressClassName: "session-toast-progress",
+        });
         setSessionStarted(false);
         setSeconds(0);
         setSelectedBook(null);
@@ -280,6 +284,9 @@ const ReadingSession: React.FC = () => {
 
                 </div>
             </div>
+            <ToastContainer
+                position="top-center"
+/>
         </div>
     );
 };
