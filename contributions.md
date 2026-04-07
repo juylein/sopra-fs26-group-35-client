@@ -59,14 +59,15 @@ reason).
 
 ---
 
-## Contributions Week 2 - [Begin Date] to [End Date]
+## Contributions Week 2 - [01.04.2026] to [08.04.2026]
 
 | **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
 | **[@githubUser1]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
-| **[@githubUser2]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
-|                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
+| **[@missbo-cyber]** | 06.04.2026]   | https://github.com/juylein/sopra-fs26-group-35-client/commit/0cbfd735437f051c97f53313845de9ad334bf11f | Added friends page layout, favourite genres of the user in the dashboard page and changed the toast that is visible after the user ended the session | Friends page is one of our main pages in the app where a user can invite other friends and see their profiles. Before the information about the end of session was send in the form of alert, I changed it to the toast form so it is more user-friendly.  |
+|                    | 07.04.2026  | https://github.com/juylein/sopra-fs26-group-35-client/commit/f3a1cfa1a12bd82db777e1cc5b55fbc5e6fd94b3] | Added book modal, where after clicking on the cover user can see more details about the book.  | It was one of our user stories (user story 19) and issue number 4 on github. Discover page became more interactive, a cover reacts to the cursor and a user can read more details about the book. |
+|                    | 07.04.2026  | https://github.com/juylein/sopra-fs26-group-35-client/commit/5592d57410a85289cedc5ef09215b6171be732e8 | In the discover page I added stars related to the rating of a book and fixed the issue of the searching by number of stars | It was also related to the user story number 19. User now can see the rating of the book and search by number of stars so can choose a book that has the best opinions.|
 | **[@githubUser3]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
 |                    | [date]   | [Link to Commit 2] | [Brief description of the task] | [Why this contribution is relevant] |
 | **[@githubUser4]** | [date]   | [Link to Commit 1] | [Brief description of the task] | [Why this contribution is relevant] |
