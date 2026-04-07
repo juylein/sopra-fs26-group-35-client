@@ -101,6 +101,9 @@ const Discover: React.FC = () => {
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const [addingToShelf, setAddingToShelf] = useState<string | null>(null);
     const [addedBooks, setAddedBooks] = useState<Set<string>>(new Set());
+    const [selectedBook, setSelectedBook] = useState<GoogleBook | null>(null);
+    const [bookModalOpen, setBookModalOpen] = useState(false);
+    const [modalDropdownOpen, setModalDropdownOpen] = useState(false);
 
     const [manualModalOpen, setManualModalOpen] = useState(false);
     const [manualForm] = Form.useForm();
@@ -379,8 +382,9 @@ const Discover: React.FC = () => {
                             const isAdded = shelves.length > 0 && shelves.every((s) => addedBooks.has(`${book.id}-${s.id}`));
 
                             return (
-                                <div key={book.id} className="discover-book-card">
-                                    <div className="discover-book-cover">
+                                <div key={book.id} className="discover-book-card" >
+                                    <div className="discover-book-cover" onClick={() => {setSelectedBook(book); setBookModalOpen(true);
+}}>
                                         {cover
                                             ? <img src={cover} alt={info.title} className="discover-book-img" />
                                             : <div className="discover-book-no-cover">No Cover</div>
@@ -544,6 +548,138 @@ const Discover: React.FC = () => {
                     </Button>
                 </Form>
             </Modal>
+            <Modal
+            open={bookModalOpen}
+            onCancel={() => setBookModalOpen(false)}
+            footer={null}
+            width={700}
+            className="book-details-modal"
+            >
+  {selectedBook && (
+    <div className="book-details-content" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      
+      
+      <div className="book-details-header" style={{ display: "flex", gap: "20px" }}>
+        <div className="book-details-cover" style={{ flexShrink: 0 }}>
+          {selectedBook.volumeInfo.imageLinks?.thumbnail ? (
+            <img
+              src={selectedBook.volumeInfo.imageLinks.thumbnail}
+              alt={selectedBook.volumeInfo.title}
+              style={{ width: 120, height: "auto", borderRadius: 4 }}
+            />
+          ) : (
+            <div className="discover-book-no-cover" style={{ width: 120, height: 180, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0f0f0", borderRadius: 4 }}>
+              No Cover
+            </div>
+          )}
+        </div>
+
+        <div className="book-details-main" style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+          <div className="book-details-title" style={{ fontSize: 22, fontWeight: 600 }}>
+            {selectedBook.volumeInfo.title}
+          </div>
+
+          <div className="book-details-author" style={{ fontSize: 16, color: "#555" }}>
+            {selectedBook.volumeInfo.authors?.join(", ") ?? "Unknown author"}
+          </div>
+
+          <div className="book-details-meta" style={{ fontSize: 14, color: "#777" }}>
+            {selectedBook.volumeInfo.pageCount ?? "?"} pages · {selectedBook.volumeInfo.publishedDate?.slice(0, 4) ?? "—"}
+          </div>
+
+          <div className="book-details-genres" style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: 6 }}>
+            {selectedBook.volumeInfo.categories?.map((g, i) => (
+              <span key={i} className="book-genre-tag" style={{ background: "#eee", padding: "2px 6px", borderRadius: 4, fontSize: 12 }}>
+                {g}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      
+      <div className="book-details-description" style={{ fontSize: 15, lineHeight: 1.5, color: "#333" }}>
+        {selectedBook.volumeInfo.description ?? "No description available."}
+      </div>
+
+      
+      <div className="book-details-actions" style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+        
+        <div style={{ position: "relative" }}>
+  <Button
+    className={`discover-add-btn${shelves.length > 0 && shelves.every((s) => addedBooks.has(`${selectedBook.id}-${s.id}`)) ? " added" : ""}`}
+    onClick={async (e) => {
+      e.stopPropagation();
+      if (!selectedBook) return;
+
+      if (preselectedShelfId) {
+        handleAddToShelf(selectedBook, Number(preselectedShelfId));
+      } else {
+        await fetchShelves();
+        setModalDropdownOpen((prev) => !prev);
+      }
+    }}
+  >
+    {shelves.length > 0 && shelves.every((s) => addedBooks.has(`${selectedBook.id}-${s.id}`)) ? "✓ Added!" : preselectedShelfId ? "Add to Shelf" : "Add to Shelf ▾"}
+  </Button>
+
+  {modalDropdownOpen && (
+    <div
+      className="discover-shelf-dropdown"
+      style={{
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        zIndex: 999,
+        minWidth: 160,
+        background: "#fff",
+        border: "1px solid #ddd",
+        borderRadius: 4,
+        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        marginTop: 4,
+        overflow: "hidden",
+      }}
+    >
+      {shelves.length === 0 ? (
+        <div className="discover-shelf-option discover-shelf-empty" style={{ padding: "8px 12px", color: "#777" }}>
+          No shelves yet
+        </div>
+      ) : (
+        shelves.map((shelf) => {
+          const isAddedToShelf = addedBooks.has(`${selectedBook.id}-${shelf.id}`);
+          return (
+            <div
+              key={shelf.id}
+              className={`discover-shelf-option${isAddedToShelf ? " discover-shelf-added" : ""}`}
+              style={{
+                padding: "8px 12px",
+                cursor: isAddedToShelf ? "default" : "pointer",
+                background: isAddedToShelf ? "#f0f0f0" : "#fff",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isAddedToShelf) return;
+                handleAddToShelf(selectedBook!, shelf.id);
+                setModalDropdownOpen(false); 
+              }}
+            >
+              {isAddedToShelf ? "✓ Added" : shelf.name}
+            </div>
+          );
+        })
+      )}
+    </div>
+  )}
+</div>
+
+        
+        <Button className="discover-read-btn">
+          Start Reading
+        </Button>
+      </div>
+    </div>
+  )}
+</Modal>
         </div>
     );
 };

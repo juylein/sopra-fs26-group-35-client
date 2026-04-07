@@ -897,6 +897,13 @@ a {
 .discover-book-cover {
   flex-shrink: 0;
   width: 70px;
+  cursor: pointer;
+}
+
+.discover-book-cover:hover {
+  transform: scale(1.08); 
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  z-index: 10; 
 }
 
 .discover-book-img {
@@ -958,11 +965,14 @@ a {
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
-  align-items: flex-end;
+  align-items: center;
 }
 
 .discover-add-btn-wrapper {
   position: relative;
+  display: inline-block;
+  margin-right: 10px;
+  align-items: center;
 }
 
 .discover-add-btn {
@@ -998,6 +1008,7 @@ a {
   min-width: 160px;
   overflow: hidden;
 }
+
 
 .discover-shelf-option {
   padding: 10px 16px;
@@ -1113,6 +1124,99 @@ a {
 
 .ant-modal-header {
   padding-bottom: 1rem !important;
+}
+
+.book-details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; 
+  padding: 16px;
+  background: #faf7f2;
+}
+
+.book-details-header {
+  display: flex;
+  gap: 24px; 
+  background: #faf7f2;
+}
+
+.book-details-cover img {
+  width: 150px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.book-details-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px; 
+  background: #faf7f2;
+}
+
+.book-details-title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.book-details-author {
+  font-size: 16px;
+  font-weight: 500;
+  color: #555;
+}
+
+.book-details-meta {
+  font-size: 14px;
+  color: #777;
+}
+
+.book-details-genres {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.book-genre-tag {
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #333;
+}
+
+.book-details-description {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #444;
+}
+.genre-badge {
+  background: #f0e6d2;
+  color: #5a4632;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+
+.book-modal-description {
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.4;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+
+.book-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.book-modal-actions button {
+  flex: 1;
 }
 
 /* ─── Library ────────────────────── */
