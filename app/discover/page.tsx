@@ -8,6 +8,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { Button, Select, Modal, Input, Form, InputNumber, message } from "antd";
 import Sidebar from "@/components/sidebar";
 import { SearchOutlined } from "@ant-design/icons";
+import { Rate } from "antd";
 
 interface GoogleBook {
     id: string;
@@ -137,7 +138,11 @@ const Discover: React.FC = () => {
             let results: GoogleBook[] = [...(data1.items ?? []), ...(data2.items ?? [])];
 
             if (filters.minRating > 0) {
-                results = results.filter((b) => (b.volumeInfo.averageRating ?? 0) >= filters.minRating);
+                const min = Number(filters.minRating);
+                results = results.filter((b) => {
+                    const rating = Number(b.volumeInfo.averageRating ?? 0);
+                    return rating >= min;
+                });
             }
 
             if (filters.sortBy === "newest") {
@@ -281,10 +286,17 @@ const Discover: React.FC = () => {
 
     useEffect(() => {
         if (!searched) return;
-        const activeQuery = query.trim() || "bestseller";
-        if (!query.trim()) {
-            setDefaultLabel(genre ? genre.replace("subject:", "").replace(/\+/g, " ") : defaultLabel);
-        }
+    
+        const activeQuery = query.trim() || genre || DEFAULT_QUERIES[Math.floor(Math.random() * DEFAULT_QUERIES.length)];
+    
+        setDefaultLabel(
+            query.trim()
+                ? query
+                : genre
+                    ? genre.replace("subject:", "").replace(/\+/g, " ")
+                    : defaultLabel
+        );
+    
         fetchBooks(activeQuery, { sortBy, genre, minRating });
     }, [sortBy, genre, minRating]);
 
@@ -354,7 +366,7 @@ const Discover: React.FC = () => {
                         </div>
                         <div className="discover-filter-group">
                             <span className="discover-filter-label">Rating</span>
-                            <Select className="discover-filter-select" value={minRating} onChange={setMinRating} options={RATING_OPTIONS} />
+                            <Select className="discover-filter-select" value={minRating} onChange={(val) => setMinRating(Number(val))} options={RATING_OPTIONS} />
                         </div>
                     </div>
 
@@ -393,12 +405,21 @@ const Discover: React.FC = () => {
 
                                     <div className="discover-book-info">
                                         <div className="discover-book-title">{info.title}</div>
+                        
+                                        {info.averageRating ? (
+                                        <Rate
+                                            disabled
+                                            allowHalf
+                                            value={info.averageRating}
+                                            style={{ fontSize: 14, color: "#fadb14", marginTop: 4 }}
+                                         />
+                                        ) : (
+  <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>No rating</div>
+                                        )}
                                         <div className="discover-book-meta">
                                             {info.authors?.[0] ?? "Unknown Author"} · {info.publishedDate?.slice(0, 4) ?? "—"}
                                         </div>
-                                        {info.averageRating && (
-                                            <div className="discover-book-rating">★ {info.averageRating.toFixed(1)} stars</div>
-                                        )}
+                                       
                                         {info.description && (
                                             <p className="discover-book-description">
                                                 {info.description.slice(0, 220)}{info.description.length > 220 ? "…" : ""}
@@ -583,8 +604,21 @@ const Discover: React.FC = () => {
             {selectedBook.volumeInfo.authors?.join(", ") ?? "Unknown author"}
           </div>
 
+          <div className="book-details-rating" style={{ marginTop: 4 }}>
+            {selectedBook.volumeInfo.averageRating ? (
+            <Rate
+                disabled
+                allowHalf
+                value={selectedBook.volumeInfo.averageRating}
+                style={{ fontSize: 16, color: "#fadb14" }}
+            />
+    ) : (
+      <span style={{ fontSize: 14, color: "#999" }}>No rating</span>
+    )}
+  </div>
+
           <div className="book-details-meta" style={{ fontSize: 14, color: "#777" }}>
-            {selectedBook.volumeInfo.pageCount ?? "?"} pages · {selectedBook.volumeInfo.publishedDate?.slice(0, 4) ?? "—"}
+            {selectedBook.volumeInfo.pageCount ?? "No number available"} · {selectedBook.volumeInfo.publishedDate?.slice(0, 4) ?? "—"}
           </div>
 
           <div className="book-details-genres" style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: 6 }}>
