@@ -75,10 +75,13 @@ reason).
 
 ---
 
-## Contributions Week 3 - [Begin Date] to [End Date]
+## Contributions Week 3 - [08.04.2026] to [15.04.2026]
 
-_Continue with the same table format as above._
-
+| **Student**        | **Date** | **Link to Commit** | **Description**                 | **Relevance**                       |
+| ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
+| **[@vanmey]** | [11.04.2026]   | [https://github.com/juylein/sopra-fs26-group-35-server/commit/4387b86398df8c7eb0b6d86bbe0dfbe041790685] | [(#70) Create GET /books/{bookId} endpoint to return the book's info ] | [So that the user can view the book info (not through the API but from the database)] |
+|                    | [12.04.2026]   | [https://github.com/juylein/sopra-fs26-group-35-server/commit/5979dfe0515489faa46633ddb592e8a4e2e165c8] | [Add functionality to calculate average rating from all reviews across all users] | [To be able to see the average rating of books displayed in the bookshelf's library] |
+|                    | [date]   | [Link to Commit 3] | [Brief description of the task] | [Why this contribution is relevant] |
 ---
 
 ## Contributions Week 4 - [Begin Date] to [End Date]
