@@ -9,6 +9,8 @@ import { toast, ToastContainer } from "react-toastify";
 import { Button, message } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { DeleteOutlined } from "@ant-design/icons";
+import TopBar from "@/components/topbar";
+import "@/styles/library.css"
 
 
 interface Book {
@@ -143,13 +145,7 @@ const Library: React.FC = () => {
       <Sidebar />
 
       {/* Top Bar */}
-      <div className="topbar">
-        <input className="search-input" placeholder="Search books..." />
-
-        <Button onClick={handleLogout} className="dashboard-logout-btn">
-          Logout
-        </Button>
-      </div>
+      <TopBar onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="main-content">

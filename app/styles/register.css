@@ -1,0 +1,44 @@
+/* Register page */
+.register-container {
+    width: 50rem;
+    height: 50rem;
+    padding: 50px 50px;
+    border-radius: 16px;
+
+    font-size: 2rem !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.register-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-size: 1.5rem !important;
+    background: linear-gradient(180deg, #8B5100 0%, #251500 97.6%) !important;
+}
+
+.register-button {
+    background-color: #931824 !important;
+    width: 100%
+}
+
+.register-container .ant-input,
+.register-container .ant-input-password {
+    font-size: 1.3rem !important;
+    height: 50px !important;
+    background-color: white;
+}
+
+.register-container .ant-input,
+.register-container .ant-input-affix-wrapper {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.register-page .redirect-link {
+    color: white !important;
+}

@@ -1,0 +1,42 @@
+.sidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg, #8B5100);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    color: var(--sidebar-text);
+    gap: 10px;
+    font-size: 3.0rem;
+}
+
+.logo-title {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 0.2rem;
+    margin-bottom: 4rem;
+}
+
+.sidebar .logo-book {
+    color: var(--sidebar-logo-book);
+    font-weight: 700;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.5rem;
+}
+
+.sidebar .logo-shelf {
+    color: var(--sidebar-logo-shelf);
+    font-size: 1.5rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+}
+
+.sidebar .icon {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin-bottom: 1rem;
+    text-decoration: underline;
+}

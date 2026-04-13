@@ -9,6 +9,8 @@ import { Button, Select, Modal, Input, Form, InputNumber, message } from "antd";
 import Sidebar from "@/components/sidebar";
 import { SearchOutlined } from "@ant-design/icons";
 import { Rate } from "antd";
+import TopBar from "@/components/topbar";
+import "@/styles/discover.css"
 
 interface GoogleBook {
     id: string;
@@ -327,10 +329,7 @@ const Discover: React.FC = () => {
             {contextHolder}
             <Sidebar />
 
-            <div className="dashboard-topbar">
-                <h1 className="discover-topbar-title">Discover Books</h1>
-                <Button className="dashboard-logout-btn" onClick={handleLogout}>Logout</Button>
-            </div>
+            <TopBar title="Discover Books" onLogout={handleLogout} />
 
             <div className="dashboard-main">
                 <div className="discover-content">

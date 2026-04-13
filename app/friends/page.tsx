@@ -8,6 +8,7 @@ import { Button } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
+import TopBar from "@/components/topbar";
 
 const Friends: React.FC = () => {
   const router = useRouter();
@@ -57,11 +58,7 @@ useEffect(() => {
         <div className="dashboard-root">
         <Sidebar />
 
-        {/* Top Bar */}
-        <div className="dashboard-topbar">
-            <input type="text" placeholder="Search books..." className="dashboard-search" />
-            <Button className="dashboard-logout-btn" onClick={handleLogout}>Logout</Button>
-        </div>
+        <TopBar onLogout={handleLogout} />
 
         <div className="dashboard-main">
             <div className="dashboard-content">
