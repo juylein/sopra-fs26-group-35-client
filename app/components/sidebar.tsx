@@ -10,6 +10,7 @@ import {
     TeamOutlined,
     ShareAltOutlined,
 } from "@ant-design/icons";
+import "@/styles/sidebar.css"
 
 const Sidebar = () => {
     const router = useRouter();

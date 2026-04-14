@@ -6,6 +6,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button, Form, Input } from "antd";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
+import "@/styles/login.css";
 
 interface LoginFormValues {
   username: string;

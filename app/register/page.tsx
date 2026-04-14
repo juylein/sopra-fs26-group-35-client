@@ -5,6 +5,7 @@ import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button, Form, Input, Select } from "antd";
+import "@/styles/register.css"
 
 const GENRES = [
     "Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance",

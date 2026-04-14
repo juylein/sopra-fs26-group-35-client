@@ -7,6 +7,8 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
+import TopBar from "@/components/topbar";
+import "@/styles/dashboard.css"
 
 const BOOKS = [
     { title: "War and Peace", color: "#8b4a20" },
@@ -102,12 +104,7 @@ const Dashboard: React.FC = () => {
             <Sidebar />
 
             {/* Top Bar */}
-            <div className="dashboard-topbar">
-                <input type="text" placeholder="Search books..." className="dashboard-search" />
-                <Button className="dashboard-logout-btn" onClick={handleLogout}>
-                    Logout
-                </Button>
-            </div>
+            <TopBar title="My Dashboard" onLogout={handleLogout} />
 
             {/* Main Content */}
             <div className="dashboard-main">

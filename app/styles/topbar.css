@@ -1,0 +1,111 @@
+/* ─── Top Bar ───────────────────────────────────── */
+.topbar {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width, 220px);
+    right: 0;
+    height: 60px;
+    background: #faf7f2;
+    border-bottom: 1px solid #e0d8cc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 1000;
+}
+
+.topbar-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c2416;
+    white-space: nowrap;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+/* ─── Bell button ───────────────────────────────── */
+.topbar-icon-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e0d8cc;
+    border-radius: 8px;
+    background: #fffaf4;
+    color: #5f5145;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.topbar-icon-btn:hover {
+    background: #f3ece3;
+    border-color: #d4c7b6;
+}
+
+.topbar-icon-btn:active {
+    transform: scale(0.96);
+}
+
+/* ─── Logout button ─────────────────────────────── */
+.topbar-logout-btn {
+    background: #d32f2f !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    height: 40px !important;
+    width: 90px !important;
+    transition: background 0.18s ease, transform 0.18s ease !important;
+}
+
+.topbar-logout-btn:hover {
+    background: #b71c1c !important;
+}
+
+.topbar-logout-btn:active {
+    transform: scale(0.97) !important;
+}
+
+.topbar-notif-wrapper {
+    position: relative;
+}
+
+.topbar-notif-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background: #fff;
+    border: 1px solid #e0d8cc;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    z-index: 2000;
+    overflow: hidden;
+}
+
+.topbar-notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0ece5;
+}
+
+.topbar-notif-item:last-child {
+    border-bottom: none;
+}
+
+.topbar-notif-text {
+    font-size: 0.9rem;
+    color: #2c2416;
+    margin: 0 0 4px 0;
+}
+
+.topbar-notif-time {
+    font-size: 0.8rem;
+    color: #a89880;
+}
