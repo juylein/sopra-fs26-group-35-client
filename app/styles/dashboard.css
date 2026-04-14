@@ -23,7 +23,6 @@
     flex-direction: column;
     gap: 24px;
 }
-
 /* ─── Shared Card ───────────────────────────────── */
 .db-card {
     background: #faf7f2;
@@ -142,10 +141,15 @@
     display: flex;
     min-height: 100vh;
     background-color: var(--ui-bg);
-    color: var(--sidebar-text);
+    color: inherit; 
     font-family: 'Inter', sans-serif;
     font-size: 3.0rem;
 }
+
+.sidebar {
+    color: var(--sidebar-text);
+}
+
 
 /* ─── Bookshelf ─────────────────────────────────── */
 .bookshelf-card {
@@ -447,3 +451,22 @@
     gap: 12px;
     font-size: 14px;
 }
+
+/* ─── Edit Profile ───────────────────────────────── */
+
+.edit-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Philosopher', serif;
+    background: #f5f0e8;
+    min-height: 100vh;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.edit-content * {
+    color: #1a1a1a !important;
+  }
+

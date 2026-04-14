@@ -357,6 +357,17 @@ a {
 .search-add-input {
   flex: 1; 
 }
+.friends-search {
+  width: 250px;
+  height: 30px;
+  border: 1px solid #e0d8cc;
+  flex: 1;
+  outline: none;
+  background: #faf7f2;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: "Philosopher", serif;
+}
 
 /* Avatar container */
 .avatar {

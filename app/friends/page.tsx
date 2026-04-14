@@ -73,7 +73,7 @@ useEffect(() => {
         
                         {/* Search + Add Friend */}
                         <div>
-                             <input type="text" placeholder="Search by name or username " className="dashboard-search search-add-input" />
+                             <input type="text" placeholder="Search by name or username " className="friends-search" />
         
                             <Button type="link" style={{ fontWeight: 500 }}>
                                 + Add Friend
