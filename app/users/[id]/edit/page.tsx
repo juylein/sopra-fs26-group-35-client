@@ -16,12 +16,18 @@ const GENRES = [
   "Non-Fiction", "Adventure", "Graphic Novel", "Poetry", "Crime",
 ];
 
+interface EditProfileFormValues {
+    bio: string;
+    genres: string[];
+    password?: string;
+  }
+
 const EditProfile: React.FC = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const apiService = useApi();
 
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<EditProfileFormValues>();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,7 +43,7 @@ const EditProfile: React.FC = () => {
     fetchUser();
   }, [apiService, id, form]);
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: EditProfileFormValues) => {
     try {
       await apiService.put(`/users/${id}`, {
         bio: values.bio,
@@ -66,7 +72,7 @@ const EditProfile: React.FC = () => {
           <div className="db-card" style={{ maxWidth: 700, margin: "0 auto", fontFamily: "inherit"  }}>
             <h2 style={{ marginBottom: 20 }}>Edit your profile</h2>
 
-            <Form
+            <Form<EditProfileFormValues>
               form={form}
               layout="vertical"
               onFinish={onFinish}
