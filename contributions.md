@@ -81,7 +81,7 @@ reason).
 | ------------------ | -------- | ------------------ | ------------------------------- | ----------------------------------- |
 | **[@vanmey]** | [11.04.2026]   | [https://github.com/juylein/sopra-fs26-group-35-server/commit/4387b86398df8c7eb0b6d86bbe0dfbe041790685] | [(#70) Create GET /books/{bookId} endpoint to return the book's info ] | [So that the user can view the book info (not through the API but from the database)] |
 |                    | [12.04.2026]   | [https://github.com/juylein/sopra-fs26-group-35-server/commit/5979dfe0515489faa46633ddb592e8a4e2e165c8] | [Add functionality to calculate average rating from all reviews across all users] | [To be able to see the average rating of books displayed in the bookshelf's library] |
-|                    | [date]   | [Link to Commit 3] | [Brief description of the task] | [Why this contribution is relevant] |
+|                    | [12.04.2026]   | [https://github.com/juylein/sopra-fs26-group-35-server/commit/8b7fc76dbe647e200986733157d106c0040d4871] | [Create POST /users/{userId}/sessions endpoint] | [It's the basic framework for all further functionalities related to reading sessions] |
 ---
 
 ## Contributions Week 4 - [Begin Date] to [End Date]
