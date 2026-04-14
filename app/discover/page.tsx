@@ -186,6 +186,10 @@ const Discover: React.FC = () => {
     const handleAddToShelf = async (book: GoogleBook, shelfId: number) => {
         setAddingToShelf(book.id);
         const info = book.volumeInfo;
+        const coverUrl = 
+        info.imageLinks?.thumbnail ??
+        info.imageLinks?.smallThumbnail ??
+        null;
         try {
             await apiService.post(`/users/${userId}/library/shelves/${shelfId}/books`, {
                 googleId: book.id,
@@ -195,6 +199,7 @@ const Discover: React.FC = () => {
                 releaseYear: info.publishedDate ? parseInt(info.publishedDate.slice(0, 4)) : null,
                 genre: info.categories?.[0] ?? null,
                 description: info.description ?? null,
+                coverUrl: coverUrl
             });
             setAddedBooks((prev) => new Set(prev).add(`${book.id}-${shelfId}`));
             messageApi.success(`"${info.title}" added to shelf!`);
@@ -270,7 +275,7 @@ const Discover: React.FC = () => {
     const handleLogout = async (): Promise<void> => {
         try {
             if (!userId) { router.push("/login"); return; }
-            await apiService.post(`/users/${userId}/logout`, {});
+            await apiService.put(`/users/${userId}/logout`, {});
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
