@@ -8,6 +8,7 @@ import { User } from "@/types/user";
 import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
+import TopBar from "@/components/topbar";
 
 // ── Placeholder data (replace with real API calls when backend is ready) ──────
 
@@ -138,10 +139,7 @@ const SharedReadingSession: React.FC = () => {
             <Sidebar />
 
             {/* Top Bar */}
-            <div className="dashboard-topbar">
-                <input type="text" placeholder="Search books..." className="dashboard-search" />
-                <Button className="dashboard-logout-btn" onClick={handleLogout}>Logout</Button>
-            </div>
+            <TopBar onLogout={handleLogout} />
 
             <div className="dashboard-main">
                 <div className="dashboard-content">
