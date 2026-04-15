@@ -30,6 +30,7 @@
 
 /* ─── Bell button ───────────────────────────────── */
 .topbar-icon-btn {
+    position: relative;
     width: 40px;
     height: 40px;
     border: 1px solid #e0d8cc;
@@ -50,6 +51,26 @@
 
 .topbar-icon-btn:active {
     transform: scale(0.96);
+}
+
+/* ─── Unread badge ──────────────────────────────── */
+.topbar-notif-badge {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    background: #d32f2f;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    pointer-events: none;
+    border: 2px solid #faf7f2;
 }
 
 /* ─── Logout button ─────────────────────────────── */
@@ -73,6 +94,7 @@
     transform: scale(0.97) !important;
 }
 
+/* ─── Notification wrapper & dropdown ──────────── */
 .topbar-notif-wrapper {
     position: relative;
 }
@@ -81,8 +103,10 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 280px;
-    background: #fff;
+    width: 300px;
+    max-height: 420px;
+    overflow-y: auto;
+    background: #fffaf4;
     border: 1px solid #e0d8cc;
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -90,22 +114,90 @@
     overflow: hidden;
 }
 
-.topbar-notif-item {
+/* ─── Dropdown header ───────────────────────────── */
+.topbar-notif-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2c2416;
     padding: 12px 16px;
+    border-bottom: 1px solid #e0d8cc;
+    background: #faf7f2;
+    letter-spacing: 0.01em;
+}
+
+/* ─── Grouped sections ──────────────────────────── */
+.topbar-notif-group {
+    padding: 6px 0;
     border-bottom: 1px solid #f0ece5;
+}
+
+.topbar-notif-group:last-child {
+    border-bottom: none;
+}
+
+.topbar-notif-group-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a89880;
+    padding: 4px 16px 2px;
+}
+
+/* ─── Individual items ──────────────────────────── */
+.topbar-notif-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0ece5;
+    transition: background 0.15s ease;
 }
 
 .topbar-notif-item:last-child {
     border-bottom: none;
 }
 
+.topbar-notif-item:hover {
+    background: #f3ece3;
+}
+
+.topbar-notif-item.unread {
+    background: #fdf3e7;
+}
+
+.topbar-notif-item.unread:hover {
+    background: #f8e8d4;
+}
+
 .topbar-notif-text {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     color: #2c2416;
-    margin: 0 0 4px 0;
+    margin: 0 0 3px 0;
 }
 
 .topbar-notif-time {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+    color: #a89880;
+}
+
+/* ─── Empty state ───────────────────────────────── */
+.topbar-notif-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    gap: 8px;
+    color: #a89880;
+}
+
+.topbar-notif-empty span {
+    font-size: 26px;
+}
+
+.topbar-notif-empty p {
+    margin: 0;
+    font-size: 13px;
     color: #a89880;
 }
