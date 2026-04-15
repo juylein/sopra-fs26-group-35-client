@@ -398,7 +398,12 @@ const Discover: React.FC = () => {
                             const isAdded = shelves.length > 0 && shelves.every((s) => addedBooks.has(`${book.id}-${s.id}`));
 
                             return (
-                                <div key={book.id} className="discover-book-card" >
+                                <div key={book.id} className="discover-book-card"   
+                                onClick={() => {
+                                    setSelectedBook(book);
+                                    setBookModalOpen(true);
+                                  }}
+                                >
                                     <div className="discover-book-cover" onClick={() => {setSelectedBook(book); setBookModalOpen(true);
 }}>
                                         {cover
@@ -408,7 +413,8 @@ const Discover: React.FC = () => {
                                     </div>
 
                                     <div className="discover-book-info">
-                                        <div className="discover-book-title">{info.title}</div>
+                                        <div className="discover-book-title">{info.title} 
+                                        </div>
                         
                                         {info.averageRating ? (
                                         <Rate
