@@ -10,12 +10,28 @@ import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
 
-const BOOKS = [
-    { title: "Wuthering Heights", author: "Emily Brontë", color: "#2a2116", page: 244, total: 359 },
-    { title: "Dune", author: "Frank Herbert", color: "#7a5a20", page: 180, total: 412 },
-    { title: "The Great Gatsby", author: "F. Scott Fitzgerald", color: "#3a5a8b", page: 90, total: 180 },
-    { title: "Crime and Punishment", author: "Fyodor Dostoevsky", color: "#8b1a1a", page: 50, total: 520 },
-];
+
+
+
+interface Book {
+    id: number;
+    googleId: string | null;
+    name: string;
+    authors: string[];
+    pages: number | null;
+    releaseYear: number | null;
+    genre: string | null;
+    description: string | null;
+    coverUrl: string | null;
+  }
+
+
+interface Shelf {
+    id: number;
+    name: string;
+    books: Book[];
+  }
+  
 
 const ReadingSession: React.FC = () => {
     const router = useRouter();
@@ -26,9 +42,10 @@ const ReadingSession: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
 
     // Book selection
-    const [selectedBook, setSelectedBook] = useState<typeof BOOKS[0] | null>(null);
+    const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(0);
     const [sessionStarted, setSessionStarted] = useState(false);
+    const [shelves, setShelves] = useState<Shelf[]>([]);
 
     // Timer
     const [seconds, setSeconds] = useState(0);
@@ -37,7 +54,7 @@ const ReadingSession: React.FC = () => {
     const handleLogout = async (): Promise<void> => {
         try {
             if (!userId) { router.push("/login"); return; }
-            await apiService.post(`/users/${userId}/logout`, {});
+            await apiService.put(`/users/${userId}/logout`, {});
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
@@ -48,25 +65,23 @@ const ReadingSession: React.FC = () => {
     };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (!localStorage.getItem("token")) {
-                router.push("/login");
-                return;
-            }
-            try {
-                const fetchedUser = await apiService.get<User>(`/users/${userId}`);
-                setUser(fetchedUser);
-            } catch (error) {
-                if (error instanceof Error) {
-                    alert(`Something went wrong while fetching the user:\n${error.message}`);
-                } else {
-                    console.error("An unknown error occurred while fetching the user.");
-                }
-            }
+        if (!localStorage.getItem("token")) {
+            router.push("/login");
+            return;
+        }
+        const fetchShelves = async () => {
+          try {
+            const data = await apiService.get<Shelf[]>(
+              `/users/${userId}/library/shelves`
+            );
+            setShelves(data);
+          } catch (err) {
+            console.error(err);
+          }
         };
-
-        fetchUser();
-    }, [apiService, userId, router]);
+      
+        if (userId) fetchShelves();
+      }, [userId, apiService, router]);
 
     // Timer tick
     useEffect(() => {
@@ -84,7 +99,7 @@ const ReadingSession: React.FC = () => {
 
     const handleStartSession = () => {
         if (!selectedBook) return;
-        setCurrentPage(selectedBook.page);
+        setCurrentPage(0);
         setSeconds(0);
         setRunning(true);
         setSessionStarted(true);
@@ -105,7 +120,8 @@ const ReadingSession: React.FC = () => {
         setSelectedBook(null);
     };
 
-    const pct = selectedBook ? Math.round((currentPage / selectedBook.total) * 100) : 0;
+    const pct = selectedBook?.pages ? Math.round((currentPage / selectedBook.pages) * 100) : 0;
+    const allBooks = shelves.flatMap((shelf) => shelf.books);
 
     return (
         <div className="dashboard-root">
@@ -130,9 +146,9 @@ const ReadingSession: React.FC = () => {
                         <div className="db-card">
                             <div className="bottom-card-title" style={{ marginBottom: 16 }}>Choose a book to read</div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                                {BOOKS.map((book, i) => (
+                                {allBooks.map((book) => (
                                     <div
-                                        key={i}
+                                        key={book.id}
                                         onClick={() => setSelectedBook(book)}
                                         style={{
                                             display: "flex",
@@ -140,32 +156,48 @@ const ReadingSession: React.FC = () => {
                                             gap: 14,
                                             padding: "12px 16px",
                                             borderRadius: 6,
-                                            border: selectedBook?.title === book.title
+                                            border: selectedBook?.id === book.id
                                                 ? "2px solid #185FA5"
                                                 : "1px solid #d4c9b0",
-                                            background: selectedBook?.title === book.title ? "#f0f4ff" : "white",
+                                            background: selectedBook?.id=== book.id? "#f0f4ff" : "white",
                                             cursor: "pointer",
                                         }}
+                                        
                                     >
                                         {/* Spine */}
+                                    {book.coverUrl ? (
+                                        <img
+                                            src={book.coverUrl}
+                                            alt={book.name}
+                                            style={{
+                                                width: 36,
+                                                height: 52,
+                                                objectFit: "cover",
+                                                borderRadius: "2px 4px 4px 2px",
+                                                boxShadow: "1px 2px 4px rgba(0,0,0,0.2)",
+                                                flexShrink: 0,
+                                            }}
+                                        />
+                                    ) : (
                                         <div
                                             style={{
                                                 width: 36,
                                                 height: 52,
-                                                background: book.color,
+                                                background: "#3a5a8b",
                                                 borderRadius: "2px 4px 4px 2px",
                                                 flexShrink: 0,
                                                 boxShadow: "1px 2px 4px rgba(0,0,0,0.2)",
                                             }}
-                                        />
+                                            />
+                                        )}
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, fontSize: "1rem", color: "#1a1a1a" }}>{book.title}</div>
-                                            <div style={{ fontSize: "0.85rem", color: "#8a7d6a" }}>{book.author}</div>
+                                            <div style={{ fontWeight: 700, fontSize: "1rem", color: "#1a1a1a" }}>{book.name}</div>
+                                            <div style={{ fontSize: "0.85rem", color: "#8a7d6a" }}>{book.authors}</div>
                                             <div style={{ fontSize: "0.8rem", color: "#8a7d6a", marginTop: 4 }}>
-                                                Page {book.page} of {book.total} · {Math.round((book.page / book.total) * 100)}% complete
+                                            Page 0 of {book.pages ?? "?"} 
                                             </div>
                                         </div>
-                                        {selectedBook?.title === book.title && (
+                                        {selectedBook?.name === book.name && (
                                             <div style={{ color: "#185FA5", fontWeight: 700, fontSize: "0.85rem" }}>Selected ✓</div>
                                         )}
                                     </div>
@@ -184,17 +216,50 @@ const ReadingSession: React.FC = () => {
 
                     {/* Active Session */}
                     {sessionStarted && selectedBook && (
-                        <>
-                            {/* Timer Card */}
-                            <div className="bookshelf-card">
-                                <div className="bookshelf-session">
-                                    <div className="bookshelf-session-cover" style={{ background: selectedBook.color }} />
+                            <>
+                                {/* Timer Card */}
+                                <div className="bookshelf-card">
+                                    <div className="bookshelf-session">
+                                    <div
+                                className="bookshelf-session-cover"
+                                style={{
+                                width: 60,
+                                height: 90,
+                                borderRadius: 4,
+                                overflow: "hidden",
+                                background: "#e8e0cc",
+                                flexShrink: 0,
+                            }}
+                            >
+                            {selectedBook.coverUrl ? (
+                                <img
+                                src={selectedBook.coverUrl}
+                                alt={selectedBook.name}
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                }}
+                                />
+                            ) : (
+                                <div
+                                style={{
+                                    fontSize: 10,
+                                    textAlign: "center",
+                                    paddingTop: 30,
+                                    color: "#8a7d6a",
+                                }}
+                                >
+                                No cover
+                                </div>
+                            )}
+                            </div>
                                     <div className="bookshelf-session-info">
                                         <div className="bookshelf-session-title">
-                                            {selectedBook.title} – {selectedBook.author}
+                                            {selectedBook.name} – {selectedBook.authors}
                                         </div>
                                         <div className="bookshelf-session-subtitle">
-                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.total}
+                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.pages ?? 0}
                                         </div>
                                         <div className="bookshelf-progress-bar">
                                             <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
@@ -235,16 +300,16 @@ const ReadingSession: React.FC = () => {
                                             {currentPage}
                                         </div>
                                         <Button
-                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.total, p + 1))}
+                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.pages ?? 0, p + 1))}
                                             style={{ fontWeight: 700, fontSize: "1.1rem" }}
                                         >+</Button>
-                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.total}</span>
+                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.pages ?? 0}</span>
                                     </div>
                                     <div className="bookshelf-progress-bar" style={{ marginBottom: 6 }}>
                                         <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
                                     </div>
                                     <div className="bookshelf-progress-label">
-                                        {selectedBook.total - currentPage} pages remaining
+                                        {selectedBook.pages ?? 0 - currentPage} pages remaining
                                     </div>
                                 </div>
 
@@ -254,9 +319,9 @@ const ReadingSession: React.FC = () => {
                                     <div className="profile-stats" style={{ marginTop: 16, gridTemplateColumns: "1fr 1fr" }}>
                                         {[
                                             [formatTime(seconds), "time today"],
-                                            [String(Math.max(0, currentPage - selectedBook.page)), "pages this session"],
-                                            [String(Math.round((currentPage / selectedBook.total) * 100)) + "%", "book complete"],
-                                            [String(selectedBook.total - currentPage), "pages left"],
+                                            [String(Math.max(0, currentPage - (selectedBook.pages ?? 0))), "pages this session"],
+                                            [String(Math.round((currentPage / (selectedBook.pages ?? 0)) * 100)) + "%", "book complete"],
+                                            [String(selectedBook.pages ?? 0 - currentPage), "pages left"],
                                         ].map(([val, label], i) => (
                                             <div key={i} className="profile-stat-cell">
                                                 {val}

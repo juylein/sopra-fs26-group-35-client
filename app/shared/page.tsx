@@ -55,7 +55,7 @@ const SharedReadingSession: React.FC = () => {
     const handleLogout = async (): Promise<void> => {
         try {
             if (!userId) { router.push("/login"); return; }
-            await apiService.post(`/users/${userId}/logout`, {});
+            await apiService.put(`/users/${userId}/logout`, {});
         } catch (error) {
             console.error("Logout error:", error);
         } finally {

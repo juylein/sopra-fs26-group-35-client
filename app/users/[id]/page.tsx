@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
                 router.push("/login");
                 return;
             }
-            await apiService.post(`/users/${userId}/logout`, {});
+            await apiService.put(`/users/${id}/logout`, {});
         } catch (error) {
             console.error("Logout error:", error);
         } finally {
