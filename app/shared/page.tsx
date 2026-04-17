@@ -65,6 +65,17 @@ const SharedReadingSession: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        const fetchUser = async () => {
+            if (!localStorage.getItem("token")) {
+                router.push("/login");
+                return;
+            }
+        };
+      
+        fetchUser();
+      }, [apiService, userId, router]);
+
     // Timer tick
     useEffect(() => {
         if (!running) return;
