@@ -31,27 +31,17 @@ const Friends: React.FC = () => {
         router.push("/login");
     }
 };
-
 useEffect(() => {
-    const fetchUser = async () => {
-        if (!localStorage.getItem("token")) {
-            router.push("/login");
-            return;
-        }
-        try {
-            const fetchedUser = await apiService.get<User>(`/users/${userId}`);
-            setUser(fetchedUser);
-        } catch (error) {
-            if (error instanceof Error) {
-                alert(`Something went wrong while fetching the user:\n${error.message}`);
-            } else {
-                console.error("An unknown error occurred while fetching the user.");
-            }
-        }
-    };
+  const fetchUser = async () => {
+      if (!localStorage.getItem("token")) {
+          router.push("/login");
+          return;
+      }
+  };
 
-    fetchUser();
+  fetchUser();
 }, [apiService, userId, router]);
+
 
     return (
         

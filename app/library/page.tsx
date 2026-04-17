@@ -133,13 +133,16 @@ const Library: React.FC = () => {
         router.push("/login");
     }
 };
+useEffect(() => {
+  const fetchUser = async () => {
+      if (!localStorage.getItem("token")) {
+          router.push("/login");
+          return;
+      }
+  };
 
-  const BOOKS: Book[] = [
-    { id: 1, googleId: null, name: "War and Peace", authors: ["Tolstoy"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
-    { id: 2, googleId: null, name: "Pride and Prejudice", authors: ["Austen"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
-    { id: 3, googleId: null, name: "Alice in Wonderland", authors: ["Carroll"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
-  ];
-
+  fetchUser();
+}, [apiService, userId, router]);
   return (
     <div className="library-container">
       <Sidebar />
