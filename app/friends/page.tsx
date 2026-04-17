@@ -31,7 +31,16 @@ const Friends: React.FC = () => {
         router.push("/login");
     }
 };
+useEffect(() => {
+  const fetchUser = async () => {
+      if (!localStorage.getItem("token")) {
+          router.push("/login");
+          return;
+      }
+  };
 
+  fetchUser();
+}, [apiService, userId, router]);
 
 
     return (

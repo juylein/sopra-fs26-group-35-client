@@ -286,6 +286,17 @@ const Discover: React.FC = () => {
     };
 
     useEffect(() => {
+        const fetchUser = async () => {
+            if (!localStorage.getItem("token")) {
+                router.push("/login");
+                return;
+            }
+        };
+      
+        fetchUser();
+      }, [apiService, userId, router]);
+
+    useEffect(() => {
         const randomQuery = DEFAULT_QUERIES[Math.floor(Math.random() * DEFAULT_QUERIES.length)];
         setDefaultLabel(randomQuery.replace("subject:", "").replace("+", " "));
         fetchBooks(randomQuery, { sortBy, genre, minRating });
