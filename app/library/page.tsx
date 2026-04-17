@@ -213,7 +213,7 @@ const Library: React.FC = () => {
                     <div
                       title={book.name}
                       className="book"
-                      style={{ background: "#3a5a8b", cursor: "pointer" }}
+                      style={{ cursor: "pointer" }}
                       onClick={() => router.push(`/books/${book.id}`)}
                     >
                       {book.coverUrl ? (

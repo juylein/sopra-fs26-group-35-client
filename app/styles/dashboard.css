@@ -470,3 +470,91 @@
     color: #1a1a1a !important;
   }
 
+
+/* ─── Shelf Picker ───────────────────────────────── */
+/* Shelf picker button */
+.shelf-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #faf7f2;
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+}
+
+/* Shelf picker dropdown */
+.shelf-picker-dropdown {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  background: #e0d8cc;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  min-width: 150px;
+  overflow: hidden;
+}
+
+.shelf-picker-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #931824;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shelf-picker-item:hover,
+.shelf-picker-item.active {
+  background: #e0d8cc;
+}
+
+.shelf-picker-item.inactive {
+  background: #fff;
+}
+
+.shelf-picker-item-count {
+  font-size: 10px;
+  color: #888;
+}
+
+/* Shelf picker wrapper */
+.shelf-picker {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+/* Bookshelf header */
+.bookshelf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* Empty shelf message */
+.shelf-empty {
+  color: #aaa;
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+/* Profile bio row */
+.profile-bio-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* No bio / no genre links */
+.profile-add-link {
+  color: #c4903a;
+  cursor: pointer;
+  text-decoration: underline;
+}
