@@ -45,6 +45,10 @@ const Library: React.FC = () => {
   const [editingShelfId, setEditingShelfId] = useState<number | null>(null);
   const isDefaultShelf = (name: string) => ["To Read", "Recent Readings", "Read"].includes(name);
 
+  // For renaming shelves
+  const [renamingShelfId, setRenamingShelfId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState<string>("");
+
   const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -85,6 +89,25 @@ const Library: React.FC = () => {
     } catch (error) {
       console.error(error);
       messageApi.error("Error creating shelf");
+    }
+  };
+
+  const handleRenameShelf = async (shelfId: number) => {
+    if (!renameValue.trim()) {
+      messageApi.error("Shelf name cannot be empty");
+      return;
+    }
+    try {
+      await apiService.put(`/users/${userId}/library/shelves/${shelfId}`, { name: renameValue });
+      setShelves((prev) =>
+        prev.map((s) => (s.id === shelfId ? { ...s, name: renameValue } : s))
+      );
+      messageApi.success("Shelf renamed!");
+      setRenamingShelfId(null);
+      setRenameValue("");
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to rename shelf");
     }
   };
 
@@ -134,14 +157,9 @@ const Library: React.FC = () => {
     }
 };
 
-  const BOOKS: Book[] = [
-    { id: 1, googleId: null, name: "War and Peace", authors: ["Tolstoy"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
-    { id: 2, googleId: null, name: "Pride and Prejudice", authors: ["Austen"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
-    { id: 3, googleId: null, name: "Alice in Wonderland", authors: ["Carroll"], pages: null, releaseYear: null, genre: null, description: null, coverUrl: null },
-  ];
-
   return (
     <div className="library-container">
+      {contextHolder}
       <Sidebar />
 
       {/* Top Bar */}
@@ -164,18 +182,42 @@ const Library: React.FC = () => {
             {shelves.map((shelf) => (
               <div key={shelf.id} className="section"
               style={{ position: "relative", paddingTop: 20 }} >
+              {/* Section title — shows rename input when editing a non-default shelf */}
+              {renamingShelfId === shelf.id ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <input
+                    className="modal-input"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleRenameShelf(shelf.id)}
+                    autoFocus
+                    style={{ maxWidth: 260 }}
+                  />
+                  <button className="primary-btn" onClick={() => handleRenameShelf(shelf.id)}>Save</button>
+                  <button className="primary-btn" onClick={() => { setRenamingShelfId(null); setRenameValue(""); }}>Cancel</button>
+                </div>
+              ) : (
                 <div className="section-title">{shelf.name}</div>
-                {/* Edit & Delete Buttons, delete only for user-created shelves */}
-                <button
-                  onClick={() => setEditingShelfId((prev) => (prev === shelf.id ? null : shelf.id))}
-                  className="edit-bookshelf-btn"
-                  style={{
-                      position: "absolute",
-                      top: 10,
-                      right: 120
-                    }}>
-                  {editingShelfId === shelf.id ? "Done" : "Edit"}
-                </button>
+              )}
+
+              {/* Edit button */}
+              <button
+                onClick={() => {
+                  const entering = editingShelfId !== shelf.id;
+                  setEditingShelfId(entering ? shelf.id : null);
+                  if (entering && !isDefaultShelf(shelf.name)) {
+                    setRenamingShelfId(shelf.id);
+                    setRenameValue(shelf.name);
+                  } else {
+                    setRenamingShelfId(null);
+                    setRenameValue("");
+                  }
+                }}
+                className="edit-bookshelf-btn"
+                style={{ position: "absolute", top: 10, right: 120 }}
+              >
+                {editingShelfId === shelf.id ? "Done" : "Edit"}
+              </button>
                 
                 {/* Delete button greyed out for default shelves */}  
                 <button
