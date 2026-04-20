@@ -97,7 +97,13 @@ reason).
 
 | **@missbo-cyber**                      | 14.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/28 | Changed the post to put for a logout function so now it correctly calls the server. Added a connection of the session page to the server so now it is showing books which user has on their shelves instead of hardcoded books. It also displays a real cover of the book now instead of just a background color. | This contribution is relevant because now another page is connected to the server which is crucial for our app. Moreover logout functionality is working without errors and displaying a real cover of the book instead of just a color makes an app more realistic.|
 
+| **@minhgou**                      | 17.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/823311d0e6881063b28c3c97c1ce10a171105163 | Calculate live stats, fetch shelves and recent readings | Connection between backend and frontend for dashboard, now books added to bookshelves appear on the main page. User can now see live stats such as how many books read and how many pages.
 
+| **@minhgou**                      | 18.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/2b275bca8718309a609623f2b29b079b8692e96f | Added rename shelf and delete shelf functionality  | Delete bookshelf functions properly and users can remove books. Rename shelf added but only as placeholder.
+
+| **@minhgou**                      | 20.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/6390d9617ac0f1836ed758183c84c0f87176ad80 | Delete bookshelf button updated  | Delete bookshelf button modified to be more user-friendly and intuitive.
+
+| **@minhgou**                      | 20.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/082c1e57ca869958020c6a0a98fb08a4c2f8b170 | Alter add and delete buttons and add to css | Added all styles from library to css to keep the code base clean. Add and delete book buttons were improved for better user experience.
 ---
 
 ## Contributions Week 4 - [Begin Date] to [End Date]
