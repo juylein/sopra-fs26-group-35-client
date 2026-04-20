@@ -84,6 +84,48 @@
     transition: background 0.2s;
 }
 
+.add-book-btn {
+  background: #e8e0cc;
+  border: 2px dashed #c8b898;
+  color: #8a7d6a;
+  display: flex;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.add-book-btn:hover {
+  background: #d8cfb5;
+  border-color: #b5a57f;
+}
+
+.delete-book-btn {
+  position: absolute;
+  top: -6px;
+  right: -3px;
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  font-size: 12px;
+  line-height: 1;        
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.delete-book-btn:hover {
+  background: #b71c1c;
+  transform: scale(1.1);
+}
+
 
 /* Sections */
 .section {

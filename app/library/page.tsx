@@ -277,23 +277,8 @@ useEffect(() => {
                     {/* DELETE BUTTON (only in edit mode) */}
                     {editingShelfId === shelf.id && (
                       <button
+                        className="delete-book-btn"
                         onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, book.id); }}
-                        style={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          background: "#d32f2f",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: 20,
-                          height: 20,
-                          fontSize: 12,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
                       >
                         ×
                       </button>
@@ -303,20 +288,10 @@ useEffect(() => {
 
                   {/* Add book button */}
                   <div
-                      className="book"
-                      style={{
-                        background: "#e8e0cc",
-                        border: "2px dashed #c8b898",
-                        color: "#8a7d6a",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 24,
-                        cursor: "pointer"
-                      }}
-                      onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
-                    >
-                      +
+                    className="book add-book-btn"
+                    onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                  >
+                    +
                   </div>
                 </div>
                 <div className="bookshelf-count">{shelf.books.length} books</div>
