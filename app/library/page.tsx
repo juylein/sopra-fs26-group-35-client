@@ -228,7 +228,7 @@ useEffect(() => {
                 {editingShelfId === shelf.id ? "Done" : "Edit"}
               </button>
                 
-                {/* Delete button greyed out for default shelves */}  
+                {/* Delete button grseyed out for default shelves */}  
                 <button
                   onClick={() => {
                     if (!isDefaultShelf(shelf.name)) {
@@ -241,15 +241,6 @@ useEffect(() => {
                       ? "Default shelves cannot be deleted"
                       : "Delete Bookshelf"
                   }
-                  style={{
-                    position: "absolute",
-                    top: 10,
-                    right: 25,
-                    background: isDefaultShelf(shelf.name) ? "#ccc" : "#d32f2f",
-                    color: isDefaultShelf(shelf.name) ? "#666" : "#fff",
-                    cursor: isDefaultShelf(shelf.name) ? "not-allowed" : "pointer",
-                    opacity: isDefaultShelf(shelf.name) ? 0.7 : 1,
-                  }}
                   disabled={isDefaultShelf(shelf.name)}
                 >
                   Delete Bookshelf
