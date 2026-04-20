@@ -105,6 +105,7 @@ reason).
 | **@minhgou**                      | 18.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/2b275bca8718309a609623f2b29b079b8692e96f | Added rename shelf and delete shelf functionality  | Delete bookshelf functions properly and users can remove books. Rename shelf added but only as placeholder.
 | **@minhgou**                      | 20.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/6390d9617ac0f1836ed758183c84c0f87176ad80 | Delete bookshelf button updated  | Delete bookshelf button modified to be more user-friendly and intuitive.
 | **@minhgou**                      | 20.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/082c1e57ca869958020c6a0a98fb08a4c2f8b170 | Alter add and delete buttons and add to css | Added all styles from library to css to keep the code base clean. Add and delete book buttons were improved for better user experience.
+| **@fraiaperezrayonforsman-cloud**                      | 17.04.2026   | https://github.com/juylein/sopra-fs26-group-35-server/commit/97f504df53a4c162edae2b43186ece7a5fb77029 | Implemented the logic to be able to delete books from shelves | Added the endpoints in the controller and the business logic in the service. Additionally, included implementation for shared shelves in methods update book and add book which was missing. 
 
 ---
 
