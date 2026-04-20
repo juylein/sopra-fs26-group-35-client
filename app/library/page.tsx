@@ -11,6 +11,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { DeleteOutlined } from "@ant-design/icons";
 import TopBar from "@/components/topbar";
 import "@/styles/library.css"
+import { useAppMessage } from "@/hooks/useAppMessage";
 
 
 interface Book {
@@ -40,6 +41,7 @@ interface Shelf {
 const Library: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
+  const messageApi = useAppMessage();
 
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
   // const [libraryData, setLibraryData] = useState<unknown>(null);
@@ -53,8 +55,7 @@ const Library: React.FC = () => {
   const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
-  const [messageApi, contextHolder] = message.useMessage();
-
+  
   useEffect(() => {
     const fetchShelves = async () => {
       setLoadingData(true);
@@ -114,7 +115,7 @@ const Library: React.FC = () => {
     setShelves((prev) =>
       prev.map((s) =>
         s.id === shelfId
-          ? { ...s, books: s.shelfBooks.filter((b) => b.id !== bookId) }
+          ? { ...s, shelfBooks: s.shelfBooks.filter((b) => b.book.id !== bookId) }
           : s
       )
     );
