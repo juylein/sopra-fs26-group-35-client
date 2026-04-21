@@ -4,14 +4,11 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { User } from "@/types/user";
 import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
-
-
-
+import { SessionGetDTO } from "@/types/session";
 
 interface Book {
     id: number;
@@ -25,11 +22,16 @@ interface Book {
     coverUrl: string | null;
   }
 
+  interface ShelfBook {
+    id: number;
+    book: Book;
+    pagesRead: number | null;
+  }
 
 interface Shelf {
     id: number;
     name: string;
-    books: Book[];
+    shelfBooks: ShelfBook[];
   }
   
 
@@ -39,13 +41,13 @@ const ReadingSession: React.FC = () => {
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
-    const [user, setUser] = useState<User | null>(null);
 
     // Book selection
-    const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+    const [selectedBook, setSelectedBook] = useState<ShelfBook | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(0);
-    const [sessionStarted, setSessionStarted] = useState(false);
+    const [session, setSession] = useState<SessionGetDTO | null>(null)
     const [shelves, setShelves] = useState<Shelf[]>([]);
+    const [startPage, setStartPage] = useState<number>(0);
 
     // Timer
     const [seconds, setSeconds] = useState(0);
@@ -69,6 +71,12 @@ const ReadingSession: React.FC = () => {
             router.push("/login");
             return;
         }
+
+        if (session)
+        {
+            return;
+        }
+
         const fetchShelves = async () => {
           try {
             const data = await apiService.get<Shelf[]>(
@@ -81,7 +89,7 @@ const ReadingSession: React.FC = () => {
         };
       
         if (userId) fetchShelves();
-      }, [userId, apiService, router]);
+      }, [userId, session, apiService, router]);
 
     // Timer tick
     useEffect(() => {
@@ -97,31 +105,66 @@ const ReadingSession: React.FC = () => {
         return h > 0 ? `${h}:${m}:${sec}` : `${m}:${sec}`;
     };
 
-    const handleStartSession = () => {
-        if (!selectedBook) return;
-        setCurrentPage(0);
-        setSeconds(0);
-        setRunning(true);
-        setSessionStarted(true);
+    const handleStartSession = async () => {
+        if (!selectedBook) {
+            return
+        };
+
+        try {
+            const session = await apiService.post<SessionGetDTO>(
+                `/users/${userId}/sessions`,
+                [
+                  {
+                    userId: userId,
+                    shelfBookId: selectedBook.id
+                  }
+                ]
+              );
+
+              await apiService.put<SessionGetDTO>(`/users/${userId}/sessions/${session.id}/started`, {});
+
+            setCurrentPage(selectedBook.pagesRead ?? 0);
+            setStartPage(selectedBook.pagesRead ?? 0);
+            setSeconds(0);
+            setRunning(true);
+            setSession(session);
+        }
+        catch(error){
+            toast.error("Failed creating session");
+        }
     };
 
-    const handleFinishSession = () => {
+    const handleFinishSession = async () => {
         setRunning(false);
-        // TODO: POST session log to backend
-        // e.g. apiService.post(`/users/${userId}/sessions`, {
-        //   bookId, startPage, endPage: currentPage, duration: seconds, date: new Date()
-        // })
-        toast.success(`Session logged! You read for ${formatTime(seconds)}.`, {
-            className: "session-toast", 
-            progressClassName: "session-toast-progress",
-        });
-        setSessionStarted(false);
-        setSeconds(0);
-        setSelectedBook(null);
+
+        if (!session || !selectedBook)
+        {
+            toast.error("Failed ending session for the selected book.");
+            return;
+        }
+
+        try {
+            await apiService.put<SessionGetDTO>(`/users/${userId}/sessions/${session.id}/ended`, {});
+            await apiService.put(`/users/${userId}/sessions/${session.id}/left`, {
+                shelfBookId: selectedBook!.id,
+                pagesRead: currentPage
+            });
+            
+            toast.success(`Session logged! You read for ${formatTime(seconds)}.`, {
+                className: "session-toast", 
+                progressClassName: "session-toast-progress",
+            });
+
+            setSeconds(0);
+            setSelectedBook(null);
+            setSession(null);
+        } catch (error) {
+            toast.error("Failed ending session");
+        }
     };
 
-    const pct = selectedBook?.pages ? Math.round((currentPage / selectedBook.pages) * 100) : 0;
-    const allBooks = shelves.flatMap((shelf) => shelf.books);
+    const pct = selectedBook?.book.pages ? Math.round((currentPage / selectedBook.book.pages) * 100) : 0;
+    const allBooks = shelves.flatMap((shelf) => shelf.shelfBooks ?? []);
 
     return (
         <div className="dashboard-root">
@@ -142,33 +185,33 @@ const ReadingSession: React.FC = () => {
                     </div>
 
                     {/* Book Picker — shown before session starts */}
-                    {!sessionStarted && (
+                    {!session && (
                         <div className="db-card">
                             <div className="bottom-card-title" style={{ marginBottom: 16 }}>Choose a book to read</div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                                {allBooks.map((book) => (
+                                {allBooks.map((shelfBook) => (
                                     <div
-                                        key={book.id}
-                                        onClick={() => setSelectedBook(book)}
+                                        key={shelfBook.book.id}
+                                        onClick={() => setSelectedBook(shelfBook)}
                                         style={{
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 14,
                                             padding: "12px 16px",
                                             borderRadius: 6,
-                                            border: selectedBook?.id === book.id
+                                            border: selectedBook?.id === shelfBook.id
                                                 ? "2px solid #185FA5"
                                                 : "1px solid #d4c9b0",
-                                            background: selectedBook?.id=== book.id? "#f0f4ff" : "white",
+                                            background: selectedBook?.id === shelfBook.id ? "#f0f4ff" : "white",
                                             cursor: "pointer",
                                         }}
                                         
                                     >
                                         {/* Spine */}
-                                    {book.coverUrl ? (
+                                    {shelfBook.book.coverUrl ? (
                                         <img
-                                            src={book.coverUrl}
-                                            alt={book.name}
+                                            src={shelfBook.book.coverUrl}
+                                            alt={shelfBook.book.name}
                                             style={{
                                                 width: 36,
                                                 height: 52,
@@ -191,13 +234,13 @@ const ReadingSession: React.FC = () => {
                                             />
                                         )}
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, fontSize: "1rem", color: "#1a1a1a" }}>{book.name}</div>
-                                            <div style={{ fontSize: "0.85rem", color: "#8a7d6a" }}>{book.authors}</div>
+                                            <div style={{ fontWeight: 700, fontSize: "1rem", color: "#1a1a1a" }}>{shelfBook.book.name}</div>
+                                            <div style={{ fontSize: "0.85rem", color: "#8a7d6a" }}>{shelfBook.book.authors}</div>
                                             <div style={{ fontSize: "0.8rem", color: "#8a7d6a", marginTop: 4 }}>
-                                            Page 0 of {book.pages ?? "?"} 
+                                            Page {shelfBook.pagesRead ?? 0} of {shelfBook.book.pages ?? "?"} 
                                             </div>
                                         </div>
-                                        {selectedBook?.name === book.name && (
+                                        {selectedBook?.id === shelfBook.id && (
                                             <div style={{ color: "#185FA5", fontWeight: 700, fontSize: "0.85rem" }}>Selected ✓</div>
                                         )}
                                     </div>
@@ -215,7 +258,7 @@ const ReadingSession: React.FC = () => {
                     )}
 
                     {/* Active Session */}
-                    {sessionStarted && selectedBook && (
+                    {session && selectedBook && (
                             <>
                                 {/* Timer Card */}
                                 <div className="bookshelf-card">
@@ -231,10 +274,10 @@ const ReadingSession: React.FC = () => {
                                 flexShrink: 0,
                             }}
                             >
-                            {selectedBook.coverUrl ? (
+                            {selectedBook.book.coverUrl ? (
                                 <img
-                                src={selectedBook.coverUrl}
-                                alt={selectedBook.name}
+                                src={selectedBook.book.coverUrl}
+                                alt={selectedBook.book.name}
                                 style={{
                                     width: "100%",
                                     height: "100%",
@@ -256,10 +299,11 @@ const ReadingSession: React.FC = () => {
                             </div>
                                     <div className="bookshelf-session-info">
                                         <div className="bookshelf-session-title">
-                                            {selectedBook.name} – {selectedBook.authors}
+                                            {selectedBook.book.name} – {selectedBook.book.authors}
                                         </div>
                                         <div className="bookshelf-session-subtitle">
-                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.pages ?? 0}
+                                            {selectedBook.book.name} – {selectedBook.book.authors}
+                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.book.pages ?? 0}
                                         </div>
                                         <div className="bookshelf-progress-bar">
                                             <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
@@ -300,16 +344,16 @@ const ReadingSession: React.FC = () => {
                                             {currentPage}
                                         </div>
                                         <Button
-                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.pages ?? 0, p + 1))}
+                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.book.pages ?? 0, p + 1))}
                                             style={{ fontWeight: 700, fontSize: "1.1rem" }}
                                         >+</Button>
-                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.pages ?? 0}</span>
+                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.book.pages ?? 0}</span>
                                     </div>
                                     <div className="bookshelf-progress-bar" style={{ marginBottom: 6 }}>
                                         <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
                                     </div>
                                     <div className="bookshelf-progress-label">
-                                        {selectedBook.pages ?? 0 - currentPage} pages remaining
+                                        {( selectedBook.book.pages ?? 0 ) - currentPage} pages remaining
                                     </div>
                                 </div>
 
@@ -319,9 +363,9 @@ const ReadingSession: React.FC = () => {
                                     <div className="profile-stats" style={{ marginTop: 16, gridTemplateColumns: "1fr 1fr" }}>
                                         {[
                                             [formatTime(seconds), "time today"],
-                                            [String(Math.max(0, currentPage - (selectedBook.pages ?? 0))), "pages this session"],
-                                            [String(Math.round((currentPage / (selectedBook.pages ?? 0)) * 100)) + "%", "book complete"],
-                                            [String(selectedBook.pages ?? 0 - currentPage), "pages left"],
+                                            [String(Math.max(0, currentPage - startPage)), "pages this session"],
+                                            [String(Math.round((currentPage / (selectedBook.book.pages ?? 0)) * 100)) + "%", "book complete"],
+                                            [String( (selectedBook.book.pages ?? 0) - currentPage), "pages left"],
                                         ].map(([val, label], i) => (
                                             <div key={i} className="profile-stat-cell">
                                                 {val}
@@ -347,9 +391,7 @@ const ReadingSession: React.FC = () => {
 
                 </div>
             </div>
-            <ToastContainer
-                position="top-center"
-/>
+            <ToastContainer position="top-center" />
         </div>
     );
 };
