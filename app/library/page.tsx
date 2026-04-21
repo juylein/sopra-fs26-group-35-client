@@ -11,6 +11,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { DeleteOutlined } from "@ant-design/icons";
 import TopBar from "@/components/topbar";
 import "@/styles/library.css"
+import { useAppMessage } from "@/hooks/useAppMessage";
 
 
 interface Book {
@@ -25,16 +26,22 @@ interface Book {
   coverUrl: string | null;
 }
 
+interface ShelfBook {
+  id: number;
+  book: Book;
+}
+
 interface Shelf {
   id: number;
   name: string;
-  books: Book[];
+  shelfBooks: ShelfBook[];
 }
 
 
 const Library: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
+  const messageApi = useAppMessage();
 
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
   // const [libraryData, setLibraryData] = useState<unknown>(null);
@@ -48,8 +55,7 @@ const Library: React.FC = () => {
   const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
-  const [messageApi, contextHolder] = message.useMessage();
-
+  
   useEffect(() => {
     const fetchShelves = async () => {
       setLoadingData(true);
@@ -109,7 +115,7 @@ const Library: React.FC = () => {
     setShelves((prev) =>
       prev.map((s) =>
         s.id === shelfId
-          ? { ...s, books: s.books.filter((b) => b.id !== bookId) }
+          ? { ...s, shelfBooks: s.shelfBooks.filter((b) => b.book.id !== bookId) }
           : s
       )
     );
@@ -208,21 +214,21 @@ useEffect(() => {
                 </button>
                 <div className="bookshelf-shelf">
 
-                  {shelf.books.map((book) => (
+                  {shelf.shelfBooks.map((shelfBook) => (
                   <div
-                    key={book.id}
+                    key={shelfBook.id}
                     style={{ position: "relative" }} // important for overlay button
                   >
                     <div
-                      title={book.name}
+                      title={shelfBook.book.name}
                       className="book"
                       style={{ background: "#3a5a8b", cursor: "pointer" }}
-                      onClick={() => router.push(`/books/${book.id}`)}
+                      onClick={() => router.push(`/books/${shelfBook.book.id}`)}
                     >
-                      {book.coverUrl ? (
+                      {shelfBook.book.coverUrl ? (
                         <img
-                          src={book.coverUrl}
-                          alt={book.name}
+                          src={shelfBook.book.coverUrl}
+                          alt={shelfBook.book.name}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -231,14 +237,14 @@ useEffect(() => {
                           }}
                         />
                       ) : (
-                        book.name.split(" ").slice(0, 2).join(" ")
+                        shelfBook.book.name.split(" ").slice(0, 2).join(" ")
                       )}
                     </div>
 
                     {/* DELETE BUTTON (only in edit mode) */}
                     {editingShelfId === shelf.id && (
                       <button
-                        onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, book.id); }}
+                        onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, shelfBook.book.id); }}
                         style={{
                           position: "absolute",
                           top: 4,
@@ -280,7 +286,7 @@ useEffect(() => {
                       +
                   </div>
                 </div>
-                <div className="bookshelf-count">{shelf.books.length} books</div>
+                <div className="bookshelf-count">{shelf.shelfBooks.length} books</div>
               </div>
             ))}
 
