@@ -52,6 +52,10 @@ const Library: React.FC = () => {
   const [editingShelfId, setEditingShelfId] = useState<number | null>(null);
   const isDefaultShelf = (name: string) => ["To Read", "Recent Readings", "Read"].includes(name);
 
+  // For renaming shelves
+  const [renamingShelfId, setRenamingShelfId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState<string>("");
+
   const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -91,6 +95,25 @@ const Library: React.FC = () => {
     } catch (error) {
       console.error(error);
       messageApi.error("Error creating shelf");
+    }
+  };
+
+  const handleRenameShelf = async (shelfId: number) => {
+    if (!renameValue.trim()) {
+      messageApi.error("Shelf name cannot be empty");
+      return;
+    }
+    try {
+      await apiService.put(`/users/${userId}/library/shelves/${shelfId}`, { name: renameValue });
+      setShelves((prev) =>
+        prev.map((s) => (s.id === shelfId ? { ...s, name: renameValue } : s))
+      );
+      messageApi.success("Shelf renamed!");
+      setRenamingShelfId(null);
+      setRenameValue("");
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to rename shelf");
     }
   };
 
@@ -151,6 +174,7 @@ useEffect(() => {
 }, [apiService, userId, router]);
   return (
     <div className="library-container">
+      {contextHolder}
       <Sidebar />
 
       {/* Top Bar */}
@@ -173,20 +197,44 @@ useEffect(() => {
             {shelves.map((shelf) => (
               <div key={shelf.id} className="section"
               style={{ position: "relative", paddingTop: 20 }} >
+              {/* Section title — shows rename input when editing a non-default shelf */}
+              {renamingShelfId === shelf.id ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <input
+                    className="modal-input"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleRenameShelf(shelf.id)}
+                    autoFocus
+                    style={{ maxWidth: 260 }}
+                  />
+                  <button className="primary-btn" onClick={() => handleRenameShelf(shelf.id)}>Save</button>
+                  <button className="primary-btn" onClick={() => { setRenamingShelfId(null); setRenameValue(""); }}>Cancel</button>
+                </div>
+              ) : (
                 <div className="section-title">{shelf.name}</div>
-                {/* Edit & Delete Buttons, delete only for user-created shelves */}
-                <button
-                  onClick={() => setEditingShelfId((prev) => (prev === shelf.id ? null : shelf.id))}
-                  className="edit-bookshelf-btn"
-                  style={{
-                      position: "absolute",
-                      top: 10,
-                      right: 120
-                    }}>
-                  {editingShelfId === shelf.id ? "Done" : "Edit"}
-                </button>
+              )}
+
+              {/* Edit button */}
+              <button
+                onClick={() => {
+                  const entering = editingShelfId !== shelf.id;
+                  setEditingShelfId(entering ? shelf.id : null);
+                  if (entering && !isDefaultShelf(shelf.name)) {
+                    setRenamingShelfId(shelf.id);
+                    setRenameValue(shelf.name);
+                  } else {
+                    setRenamingShelfId(null);
+                    setRenameValue("");
+                  }
+                }}
+                className="edit-bookshelf-btn"
+                style={{ position: "absolute", top: 10, right: 120 }}
+              >
+                {editingShelfId === shelf.id ? "Done" : "Edit"}
+              </button>
                 
-                {/* Delete button greyed out for default shelves */}  
+                {/* Delete button grseyed out for default shelves */}  
                 <button
                   onClick={() => {
                     if (!isDefaultShelf(shelf.name)) {
@@ -199,15 +247,6 @@ useEffect(() => {
                       ? "Default shelves cannot be deleted"
                       : "Delete Bookshelf"
                   }
-                  style={{
-                    position: "absolute",
-                    top: 10,
-                    right: 25,
-                    background: isDefaultShelf(shelf.name) ? "#ccc" : "#d32f2f",
-                    color: isDefaultShelf(shelf.name) ? "#666" : "#fff",
-                    cursor: isDefaultShelf(shelf.name) ? "not-allowed" : "pointer",
-                    opacity: isDefaultShelf(shelf.name) ? 0.7 : 1,
-                  }}
                   disabled={isDefaultShelf(shelf.name)}
                 >
                   Delete Bookshelf
@@ -270,20 +309,10 @@ useEffect(() => {
 
                   {/* Add book button */}
                   <div
-                      className="book"
-                      style={{
-                        background: "#e8e0cc",
-                        border: "2px dashed #c8b898",
-                        color: "#8a7d6a",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 24,
-                        cursor: "pointer"
-                      }}
-                      onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
-                    >
-                      +
+                    className="book add-book-btn"
+                    onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                  >
+                    +
                   </div>
                 </div>
                 <div className="bookshelf-count">{shelf.shelfBooks.length} books</div>

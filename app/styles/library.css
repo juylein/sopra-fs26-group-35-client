@@ -35,17 +35,38 @@
 
 /* Delete bookshelf */
 .delete-bookshelf-btn {
-    background: #8b1a1a !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-family: inherit !important;
-    font-size: 13px !important;
-    height: 40px !important;
-    width: 90px !important;
-    margin-left: 16px !important;
-    cursor: pointer;
-    transition: background 0.2s;
+  position: absolute;           /* 🔥 bring this back */
+  top: 10px;
+  right: 25px;
+
+  background: #d32f2f;
+  color: #fff;
+
+  border: none;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  height: 40px;
+  width: 90px;            
+  padding: 0 10px;
+  
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+/* hover */
+.delete-bookshelf-btn:hover {
+  background: #b71c1c;
+}
+
+/* disabled state */
+.delete-bookshelf-btn:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 /* Edit bookshelf */
@@ -61,6 +82,48 @@
     margin-left: 16px !important;
     cursor: pointer;
     transition: background 0.2s;
+}
+
+.add-book-btn {
+  background: #e8e0cc;
+  border: 2px dashed #c8b898;
+  color: #8a7d6a;
+  display: flex;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.add-book-btn:hover {
+  background: #d8cfb5;
+  border-color: #b5a57f;
+}
+
+.delete-book-btn {
+  position: absolute;
+  top: -6px;
+  right: -3px;
+  background: #d32f2f;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  font-size: 12px;
+  line-height: 1;        
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.delete-book-btn:hover {
+  background: #b71c1c;
+  transform: scale(1.1);
 }
 
 
