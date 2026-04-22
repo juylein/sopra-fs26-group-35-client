@@ -258,11 +258,6 @@ const Dashboard: React.FC = () => {
                                 key={shelf.id}
                                 onClick={() => handleShelfSelect(shelf)}
                                 className={`shelf-picker-item ${shelf.id === selectedShelfId ? "active" : "inactive"}`}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = "#e0d8cc")}
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.background =
-                                    shelf.id === selectedShelfId ? "#e0d8cc" : "#fff")
-                                }
                                 >
                                 <span>{shelf.name}</span>
                                 <span className="shelf-picker-item-count">{shelf.shelfBooks.length}</span>
