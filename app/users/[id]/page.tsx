@@ -9,6 +9,9 @@ import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/topbar";
 import "@/styles/dashboard.css"
+import {Shelf} from "@/types/shelf";
+import { Book } from "@/types/book";
+import { ShelfBook } from "@/types/shelfbook";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -23,23 +26,6 @@ const LB = [
     { rank: 3, name: "Fraia", points: 53, color: "#3a5a8b" },
     { rank: 4, name: "Natalia", points: 52, color: "#5a5a5a" },
 ];
-
-interface Book {
-  id: number;
-  googleId: string | null;
-  name: string;
-  authors: string[];
-  pages: number | null;
-  releaseYear: number | null;
-  genre: string | null;
-  description: string | null;
-  coverUrl: string | null;
-}
-interface Shelf {
-  id: number;
-  name: string;
-  books: Book[];
-}
 
 const Dashboard: React.FC = () => {
     const router = useRouter();
@@ -60,12 +46,13 @@ const Dashboard: React.FC = () => {
 
     // Compute selected shelf and books to display based on selectedShelfId
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
-    const displayBooks = selectedShelf?.books ?? [];
+    const displayBooks = selectedShelf?.shelfBooks.map(sb => sb.book) ?? [];
 
     // Derive stats from the "Read" shelf
     const readShelf = shelves.find((s) => s.name === "Read") ?? null;
-    const booksRead = readShelf?.books.length ?? 0;
-    const pagesRead = readShelf?.books.reduce((sum, book) => sum + (book.pages ?? 0), 0) ?? 0;
+    const booksRead = readShelf?.shelfBooks.length ?? 0;
+    const pagesRead = readShelf?.shelfBooks.reduce((sum, sb) => sum + (sb.book.pages ?? 0), 0) ?? 0;
+
 
     // Fetch shelves on component mount
     useEffect(() => {
@@ -278,7 +265,7 @@ const Dashboard: React.FC = () => {
                                 }
                                 >
                                 <span>{shelf.name}</span>
-                                <span className="shelf-picker-item-count">{shelf.books.length}</span>
+                                <span className="shelf-picker-item-count">{shelf.shelfBooks.length}</span>
                                 </div>
                             ))}
                             </div>
@@ -320,19 +307,21 @@ const Dashboard: React.FC = () => {
                     <div className="recent-readings-card">
                         <div className="recent-readings-title">Recent Readings</div>
                             <div className="bookshelf-shelf">
-                                {shelves.find((s) => s.name === "Recent Readings") ?.books.length === 0 ? (
+                                {shelves.find((s) => s.name === "Recent Readings") ?.shelfBooks.length === 0 ? (
                                     <div style={{ color: "#aaa", fontSize: 14, padding: "12px 0" }}>
                                         No recent readings yet.
                                     </div>
                                 ) : (
-                                    shelves.find((s) => s.name === "Recent Readings") ?.books.map((book) => (
+                                    shelves.find((s) => s.name === "Recent Readings") ?.shelfBooks.map((sb) => {
+                                        const book = sb.book;
+                                        return (
                                         <div
-                                        key={book.id}
-                                        title={book.name}
-                                        className="book-spine-sm"
-                                    style={{ cursor: "pointer" }}
-                                    onClick={() => router.push(`/books/${book.id}`)}
-                                    >
+                                            key={book.id}
+                                            title={book.name}
+                                            className="book-spine-sm"
+                                            style={{ cursor: "pointer" }}
+                                            onClick={() => router.push(`/books/${book.id}`)}
+                                        >
                                     {book.coverUrl ? (
                                         <img
                                         src={book.coverUrl}
@@ -341,7 +330,7 @@ const Dashboard: React.FC = () => {
                                         />
                                     ) : (book.name.split(" ").slice(0, 2).join(" "))}
                                     </div>
-                                )))}
+                                )}))}
                         </div>
                     </div>
 

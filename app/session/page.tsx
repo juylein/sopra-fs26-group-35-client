@@ -9,31 +9,10 @@ import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
 import { SessionGetDTO } from "@/types/session";
+import {Shelf} from "@/types/shelf";
+import { Book } from "@/types/book";
+import { ShelfBook } from "@/types/shelfbook";
 
-interface Book {
-    id: number;
-    googleId: string | null;
-    name: string;
-    authors: string[];
-    pages: number | null;
-    releaseYear: number | null;
-    genre: string | null;
-    description: string | null;
-    coverUrl: string | null;
-  }
-
-  interface ShelfBook {
-    id: number;
-    book: Book;
-    pagesRead: number | null;
-  }
-
-interface Shelf {
-    id: number;
-    name: string;
-    shelfBooks: ShelfBook[];
-  }
-  
 
 const ReadingSession: React.FC = () => {
     const router = useRouter();
