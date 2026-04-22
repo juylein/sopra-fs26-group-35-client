@@ -12,30 +12,9 @@ import { DeleteOutlined } from "@ant-design/icons";
 import TopBar from "@/components/topbar";
 import "@/styles/library.css"
 import { useAppMessage } from "@/hooks/useAppMessage";
-
-
-interface Book {
-  id: number;
-  googleId: string | null;
-  name: string;
-  authors: string[];
-  pages: number | null;
-  releaseYear: number | null;
-  genre: string | null;
-  description: string | null;
-  coverUrl: string | null;
-}
-
-interface ShelfBook {
-  id: number;
-  book: Book;
-}
-
-interface Shelf {
-  id: number;
-  name: string;
-  shelfBooks: ShelfBook[];
-}
+import {Shelf} from "@/types/shelf";
+import { Book } from "@/types/book";
+import { ShelfBook } from "@/types/shelfbook";
 
 
 const Library: React.FC = () => {
@@ -44,7 +23,7 @@ const Library: React.FC = () => {
   const messageApi = useAppMessage();
 
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
-  // const [libraryData, setLibraryData] = useState<unknown>(null);
+
   const [loadingData, setLoadingData] = useState<boolean>(false);
   const [shelves, setShelves] = useState<Shelf[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
@@ -129,26 +108,26 @@ const Library: React.FC = () => {
   };
 
   const handleRemoveBook = async (shelfId: number, bookId: number) => {
-  try {
-    await apiService.delete(
-      `/users/${userId}/library/shelves/${shelfId}/books/${bookId}`
-    );
+    try {
+      await apiService.delete(
+        `/users/${userId}/library/shelves/${shelfId}/books/${bookId}`
+      );
 
-    // Update UI instantly
-    setShelves((prev) =>
-      prev.map((s) =>
-        s.id === shelfId
-          ? { ...s, shelfBooks: s.shelfBooks.filter((b) => b.book.id !== bookId) }
-          : s
-      )
-    );
+      // Update UI instantly
+      setShelves((prev) =>
+        prev.map((s) =>
+          s.id === shelfId
+            ? { ...s, shelfBooks: s.shelfBooks.filter((b) => b.book.id !== bookId) }
+            : s
+        )
+      );
 
-    messageApi.success("Book removed");
-  } catch (error) {
-    console.error(error);
-    messageApi.error("Failed to remove book");
-  }
-};
+      messageApi.success("Book removed");
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to remove book");
+    }
+  };
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -161,20 +140,21 @@ const Library: React.FC = () => {
         clearId();
         router.push("/login");
     }
-};
-useEffect(() => {
-  const fetchUser = async () => {
-      if (!localStorage.getItem("token")) {
-          router.push("/login");
-          return;
-      }
   };
 
-  fetchUser();
-}, [apiService, userId, router]);
+  useEffect(() => {
+    const fetchUser = async () => {
+        if (!localStorage.getItem("token")) {
+            router.push("/login");
+            return;
+        }
+    };
+
+    fetchUser();
+  }, [apiService, userId, router]);
+
   return (
     <div className="library-container">
-      {contextHolder}
       <Sidebar />
 
       {/* Top Bar */}
