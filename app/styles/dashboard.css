@@ -472,56 +472,64 @@
 
 
 /* ─── Shelf Picker ───────────────────────────────── */
-/* Shelf picker button */
+
 .shelf-picker-btn {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #faf7f2;
+  border: 1px solid #e0d8cc;
+  border-radius: 10px;
+  background: #fff;
+  font-family: 'Philosopher', serif;
+  font-size: 0.85rem;
+  color: #000;
   cursor: pointer;
-  font-size: 12px;
-  color: #333;
 }
 
-/* Shelf picker dropdown */
 .shelf-picker-dropdown {
   position: absolute;
   top: 110%;
   left: 0;
-  background: #e0d8cc;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  background: #faf7f2; /* 🔥 key change */
+  border: 1px solid #e0d8cc;
+  border-radius: 10px;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
   z-index: 100;
-  min-width: 150px;
+  min-width: 160px;
   overflow: hidden;
 }
 
 .shelf-picker-item {
-  padding: 10px 16px;
-  cursor: pointer;
-  font-size: 12px;
-  color: #333;
+  padding: 8px 12px;
+
+  font-family: 'Philosopher', serif;
+  font-size: 0.85rem;
+  color: #000;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
 
-.shelf-picker-item:hover,
-.shelf-picker-item.active {
-  background: #e0d8cc;
-}
-
-.shelf-picker-item.inactive {
-  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .shelf-picker-item-count {
-  font-size: 10px;
-  color: #888;
+  font-size: 0.75rem;
+  color: #9a8f80;
+}
+
+.shelf-picker-item:hover {
+  background: #e8e0cc;
+}
+
+.shelf-picker-item.active {
+  background: #e0d8cc;
+  font-weight: 600;
 }
 
 /* Shelf picker wrapper */
