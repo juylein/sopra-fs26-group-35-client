@@ -6,7 +6,7 @@ import { Philosopher } from "next/font/google";
 
 export const metadata: Metadata = {
   title: "Student XX-XXX-XXX",
-  description: "sopra-fs26-template-client",
+  description: "Book universe",
 };
 
 const philosopher = Philosopher({

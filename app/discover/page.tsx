@@ -11,6 +11,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { Rate } from "antd";
 import TopBar from "@/components/topbar";
 import "@/styles/discover.css"
+import { ShelfBook } from "@/types/shelfbook";
 
 interface GoogleBook {
     id: string;
@@ -91,6 +92,7 @@ const Discover: React.FC = () => {
 
     const [query, setQuery] = useState("");
     const [books, setBooks] = useState<GoogleBook[]>([]);
+    const [createdShelfBook, setCreatedShelfBook] = useState<GoogleBook[]>([]);
     const [searched, setSearched] = useState(false);
     const [loading, setLoading] = useState(false);
     const [defaultLabel, setDefaultLabel] = useState("");
@@ -173,14 +175,11 @@ const Discover: React.FC = () => {
         }
     };
 
-    const fetchShelves = async () => {
-        if (shelves.length > 0) return;
-        try {
+    const fetchShelves = async () : Promise<Shelf [] >=> {
             const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
             setShelves(data);
-        } catch (error) {
-            console.error("Failed to fetch shelves:", error);
-        }
+            return data;
+        
     };
 
     const handleAddToShelf = async (book: GoogleBook, shelfId: number) => {
@@ -270,6 +269,53 @@ const Discover: React.FC = () => {
     const openManualModal = () => {
         fetchShelves();
         setManualModalOpen(true);
+    };
+
+
+    const handleStartReading = async (book: GoogleBook) => {
+        try {
+            const shelvesData = await fetchShelves();
+    
+            const recentShelf = shelvesData.find(
+                (s) => s.name === "Recent Readings"
+            );
+    
+            if (!recentShelf) {
+                throw new Error("Recent Readings shelf not found");
+            }
+    
+            const info = book.volumeInfo;
+    
+            const coverUrl =
+                info.imageLinks?.thumbnail ??
+                info.imageLinks?.smallThumbnail ??
+                null;
+    
+            const createdShelfBook = await apiService.post<ShelfBook>(
+                `/users/${userId}/library/shelves/${recentShelf.id}/books`,
+                {
+                    googleId: book.id,
+                    name: info.title,
+                    authors: info.authors ?? [],
+                    pages: info.pageCount ?? null,
+                    releaseYear: info.publishedDate
+                        ? parseInt(info.publishedDate.slice(0, 4))
+                        : null,
+                    genre: info.categories?.[0] ?? null,
+                    description: info.description ?? null,
+                    coverUrl: coverUrl,
+                }
+            );
+    
+            if (!createdShelfBook?.id) {
+                throw new Error("Book creation failed");
+            }
+            setBookModalOpen(false);
+            router.push(`/session`);
+        } catch (err) {
+            console.error(err);
+            messageApi.error("Failed to start reading");
+        }
     };
 
     const handleLogout = async (): Promise<void> => {
@@ -491,7 +537,9 @@ const Discover: React.FC = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        <Button className="discover-read-btn">Start Reading</Button>
+                                        <Button className="discover-read-btn"onClick={(e: React.MouseEvent<HTMLButtonElement>) => {e.stopPropagation();handleStartReading(book);}}>
+                                            Start Reading
+                                        </Button>
                                     </div>
                                 </div>
                             );
@@ -728,7 +776,7 @@ const Discover: React.FC = () => {
 </div>
 
         
-        <Button className="discover-read-btn">
+        <Button className="discover-read-btn" onClick={() => { handleStartReading(selectedBook)}}>  
           Start Reading
         </Button>
       </div>

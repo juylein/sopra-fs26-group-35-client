@@ -8,6 +8,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
 
+
 interface Book {
   id: number;
   googleId: string | null;
@@ -30,6 +31,7 @@ const Book: React.FC = () => {
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
 
+
   const handleLogout = async (): Promise<void> => {
     try {
         if (!userId) { router.push("/login"); return; }
@@ -43,6 +45,10 @@ const Book: React.FC = () => {
     }
 };
 
+
+const startReading = (): void => {
+    router.push(`/session/`);
+  } ;
 
   useEffect(() => {
     if (!id) return;
@@ -127,8 +133,8 @@ const Book: React.FC = () => {
             </p>
   
             <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              <Button className="discover-read-btn">Start Reading</Button>
-              <Button className="discover-read-btn">Add review</Button>
+              <Button className="discover-read-btn" onClick={startReading}>Start Reading  </Button>
+              <Button className="discover-read-btn">Add review </Button>
             </div>
           </div>
   

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useApi } from "@/hooks/useApi";
@@ -128,6 +128,8 @@ const Quiz: React.FC = () => {
     const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
 
+    
+
     const handleLogout = async (): Promise<void> => {
         try {
             if (!userId) { router.push("/login"); return; }
@@ -140,6 +142,14 @@ const Quiz: React.FC = () => {
             router.push("/login");
         }
     };
+
+    useEffect(() => {
+        if (!localStorage.getItem("token")) {
+            router.push("/login");
+            return;
+        }
+    }, [router]);
+
 
     const addQuestion = () =>
     setQuestions((prev) => [...prev, emptyQuestion()]);
