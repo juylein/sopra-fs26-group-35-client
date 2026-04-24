@@ -12,6 +12,7 @@ import { SessionGetDTO } from "@/types/session";
 import {Shelf} from "@/types/shelf";
 import { Book } from "@/types/book";
 import { ShelfBook } from "@/types/shelfbook";
+import { useSearchParams } from "next/navigation";
 
 
 const ReadingSession: React.FC = () => {
@@ -31,6 +32,7 @@ const ReadingSession: React.FC = () => {
     // Timer
     const [seconds, setSeconds] = useState(0);
     const [running, setRunning] = useState(false);
+
 
     const handleLogout = async (): Promise<void> => {
         try {
@@ -69,6 +71,7 @@ const ReadingSession: React.FC = () => {
       
         if (userId) fetchShelves();
       }, [userId, session, apiService, router]);
+
 
     // Timer tick
     useEffect(() => {
@@ -137,13 +140,20 @@ const ReadingSession: React.FC = () => {
             setSeconds(0);
             setSelectedBook(null);
             setSession(null);
+        
         } catch (error) {
             toast.error("Failed ending session");
         }
     };
 
     const pct = selectedBook?.book.pages ? Math.round((currentPage / selectedBook.book.pages) * 100) : 0;
-    const allBooks = shelves.flatMap((shelf) => shelf.shelfBooks ?? []);
+    const allBooks = Array.from(
+        new Map(
+          shelves
+            .flatMap((shelf) => shelf.shelfBooks ?? [])
+            .map((sb) => [sb.book.id, sb]) 
+        ).values()
+      );
 
     return (
         <div className="dashboard-root">
@@ -170,7 +180,7 @@ const ReadingSession: React.FC = () => {
                             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
                                 {allBooks.map((shelfBook) => (
                                     <div
-                                        key={shelfBook.book.id}
+                                        key={shelfBook.id}
                                         onClick={() => setSelectedBook(shelfBook)}
                                         style={{
                                             display: "flex",
