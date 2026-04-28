@@ -263,23 +263,8 @@ const Library: React.FC = () => {
                     {/* DELETE BUTTON (only in edit mode) */}
                     {editingShelfId === shelf.id && (
                       <button
+                        className="delete-book-btn"
                         onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, shelfBook.book.id); }}
-                        style={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          background: "#d32f2f",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: 20,
-                          height: 20,
-                          fontSize: 12,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
                       >
                         ×
                       </button>
