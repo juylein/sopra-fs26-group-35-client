@@ -7,4 +7,5 @@ export interface User {
   bio: string | null;
   creationDate: string | null;
   genres: string[] | null;
+  friends: User[] | null;
 }

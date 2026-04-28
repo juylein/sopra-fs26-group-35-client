@@ -10,8 +10,6 @@ import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/topbar";
 import "@/styles/dashboard.css"
 import {Shelf} from "@/types/shelf";
-import { Book } from "@/types/book";
-import { ShelfBook } from "@/types/shelfbook";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -52,7 +50,6 @@ const Dashboard: React.FC = () => {
     const readShelf = shelves.find((s) => s.name === "Read") ?? null;
     const booksRead = readShelf?.shelfBooks.length ?? 0;
     const pagesRead = readShelf?.shelfBooks.reduce((sum, sb) => sum + (sb.book.pages ?? 0), 0) ?? 0;
-
 
     // Fetch shelves on component mount
     useEffect(() => {
