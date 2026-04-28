@@ -117,9 +117,15 @@ reason).
 |                                   | [17.04.2026] | https://github.com/juylein/sopra-fs26-group-35-server/commit/dd357ce8f8daa85157418a358a603636cd804e7a | [Create  GET books/{bookId}/reviews endpoint]                                                                                                                                                                                          | [First functionality for the overall goal of seeing and adding reviews.]                                                          |
 ---
 
-## Contributions Week 5 - [Begin Date] to [End Date]
+## Contributions Week 5 - [22.04.2026] to [29.04.2026]
 
-_Continue with the same table format as above._
+| **Student**                       | **Date**    | **Link to Commit** | **Description**                                                                                                                                                                                                                                 | **Relevance**                       |
+|-----------------------------------|-------------| ------------------ |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------------------------------- |
+| **@minhgou**                      | 22.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/104/changes/2b275bca8718309a609623f2b29b079b8692e96f | Updated dashboard libary dropdown style to match theme  | Necessary change to match theme of dashboard page for smooth user experience.
+| **@minhgou**                      | 23.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/107/changes/2d130bcd73fedbf7d5fc0a9036e1fcff71aaa6be | Quiz page and related styles and types | Created the layout for thefinal major page for the web application including styles.
+| **@minhgou**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/e83f038384a346e3c10cfdc373754668913bcbfc | Update library bookshelf: max two rows + view entire bookshelf btn | Added row limit to bookshelf in library and added digital wooden plank for each new row. Added button to view entire bookshelf.
+| **@minhgou**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/45e53edf2483b3f64f0c97f43c8242be2dbbc071 | Update bookshelf in dashboard max 3 rows for main but 1 for recent readings |  Added row limit to bookshelves displayed in the main dashboard for cleaner look.
+| **@minhgou**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/1c12f2418c935be256698976e4057d1b9814f6c8 | Created temp page for entire bookshelf view | Necessary page to show entire individual bookshelf.
 
 ---
 
