@@ -27,24 +27,21 @@
     color: #7a6e5e;
 }
 
-/* ── Multi-row shelf container ──────────────────────────
-   Each .bookshelf-shelf inside becomes its own plank row.
-   Remove the old gap/wrap from .bookshelf-shelf and handle
-   spacing here instead.                                   */
+/* Multi-row shelf container */
 .bookshelf-rows {
   display: flex;
   flex-direction: column;
-  gap: 0;          /* planks sit flush — the gradient bottom IS the plank */
+  gap: 0;
 }
 
 /* Override: each row is now its own shelf plank, no wrapping */
 .bookshelf-shelf {
   display: flex;
-  flex-wrap: nowrap;          /* single row per plank */
+  flex-wrap: nowrap; /* single row per plank */
   gap: 6px;
   padding: 16px 12px 0;
   background: linear-gradient(to bottom, #f5ede0 80%, #c8a878 80%, #a07840 100%);
-  border-radius: 0;           /* square between rows */
+  border-radius: 0; /* square between rows */
   min-height: 110px;
   margin-bottom: 0;
 }
@@ -116,7 +113,7 @@
 
 /* Delete bookshelf */
 .delete-bookshelf-btn {
-  position: absolute;           /* 🔥 bring this back */
+  position: absolute;
   top: 10px;
   right: 25px;
 
