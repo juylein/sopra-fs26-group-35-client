@@ -126,6 +126,7 @@ reason).
 | **@minhgou**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/e83f038384a346e3c10cfdc373754668913bcbfc | Update library bookshelf: max two rows + view entire bookshelf btn | Added row limit to bookshelf in library and added digital wooden plank for each new row. Added button to view entire bookshelf.
 | **@minhgou**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/45e53edf2483b3f64f0c97f43c8242be2dbbc071 | Update bookshelf in dashboard max 3 rows for main but 1 for recent readings |  Added row limit to bookshelves displayed in the main dashboard for cleaner look.
 | **@minhgou**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/1c12f2418c935be256698976e4057d1b9814f6c8 | Created temp page for entire bookshelf view | Necessary page to show entire individual bookshelf.
+| **@juylein**                      | 28.04.2026   | https://github.com/juylein/sopra-fs26-group-35-server/commit/e54c0a9f0ae3ae20c4d876aa61f191aa97fbe7a8 | Implemented a resume reading feature by adding a new endpoint that fetches the user's most recent completed solo session, including book title, cover, and ID, so the dashboard can display a resume reading button. | Backend for the Dashboard to display the latest solo reading session so the user is always on track which book they were last reading on. 
 
 ---
 
