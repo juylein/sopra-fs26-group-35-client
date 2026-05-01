@@ -12,6 +12,7 @@ import { Rate } from "antd";
 import TopBar from "@/components/topbar";
 import "@/styles/discover.css"
 import { ShelfBook } from "@/types/shelfbook";
+import { toast, ToastContainer } from "react-toastify";
 
 interface GoogleBook {
     id: string;
@@ -116,6 +117,8 @@ const Discover: React.FC = () => {
     const [isbnLoading, setIsbnLoading] = useState(false);
     const [manualAdding, setManualAdding] = useState(false);
     const [manualAdded, setManualAdded] = useState(false);
+
+    const [isAuthorized, setIsAuthorized] = useState(false);
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -320,7 +323,10 @@ const Discover: React.FC = () => {
 
     const handleLogout = async (): Promise<void> => {
         try {
-            if (!userId) { router.push("/login"); return; }
+            if (!userId) {
+                router.push("/login");
+                return;
+            }
             await apiService.put(`/users/${userId}/logout`, {});
         } catch (error) {
             console.error("Logout error:", error);
@@ -332,15 +338,15 @@ const Discover: React.FC = () => {
     };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (!localStorage.getItem("token")) {
-                router.push("/login");
-                return;
-            }
-        };
-      
-        fetchUser();
-      }, [apiService, userId, router]);
+        if (!localStorage.getItem("token")) {
+            toast.error("You need to be logged in to access this page.", {
+                autoClose: 2000,
+                onClose: () => router.push("/login"),
+            });
+        } else {
+            setIsAuthorized(true);
+        }
+    }, [router]);
 
     useEffect(() => {
         const randomQuery = DEFAULT_QUERIES[Math.floor(Math.random() * DEFAULT_QUERIES.length)];
@@ -385,6 +391,10 @@ const Discover: React.FC = () => {
 
     const totalPages = Math.ceil(books.length / BOOKS_PER_PAGE);
     const paginatedBooks = books.slice((currentPage - 1) * BOOKS_PER_PAGE, currentPage * BOOKS_PER_PAGE);
+
+    if (!isAuthorized) {
+        return <ToastContainer position="top-center" />;
+    }
 
     return (
         <div className="dashboard-root">

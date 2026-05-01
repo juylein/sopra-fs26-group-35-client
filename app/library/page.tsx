@@ -35,6 +35,8 @@ const Library: React.FC = () => {
   const [renamingShelfId, setRenamingShelfId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
 
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -143,15 +145,19 @@ const Library: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-        if (!localStorage.getItem("token")) {
-            router.push("/login");
-            return;
-        }
-    };
+    if (!localStorage.getItem("token")) {
+      toast.error("You need to be logged in to access this page.", {
+        autoClose: 2000,
+        onClose: () => router.push("/login"),
+      });
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
 
-    fetchUser();
-  }, [apiService, userId, router]);
+  if (!isAuthorized) {
+    return <ToastContainer position="top-center" />;
+  }
 
   return (
     <div className="library-container">

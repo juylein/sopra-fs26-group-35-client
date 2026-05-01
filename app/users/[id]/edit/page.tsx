@@ -9,6 +9,7 @@ import { useApi } from "@/hooks/useApi";
 import { User } from "@/types/user";
 import "@/styles/dashboard.css";
 import { toast, ToastContainer } from "react-toastify";
+import useLocalStorage from "@/hooks/useLocalStorage";
 
 const GENRES = [
   "Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance",
@@ -26,11 +27,27 @@ const EditProfile: React.FC = () => {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const apiService = useApi();
+  const { value: userId } = useLocalStorage<string>("id", "");
 
   const [form] = Form.useForm<EditProfileFormValues>();
 
   useEffect(() => {
     const fetchUser = async () => {
+      if (!localStorage.getItem("token")) {
+        router.push("/login");
+        return;
+      }
+
+      if (!userId) return;
+
+      if (String(id) !== String(userId)) {
+        toast.error("You are not allowed to edit another user's profile.", {
+          autoClose: 2000,
+          onClose: () => router.push(`/users/${userId}/`),
+        });
+        return;
+      }
+
       const data = await apiService.get<User>(`/users/${id}`);
 
       form.setFieldsValue({
@@ -41,7 +58,7 @@ const EditProfile: React.FC = () => {
     };
 
     fetchUser();
-  }, [apiService, id, form]);
+  }, [apiService, id, userId, form, router]);
 
   const onFinish = async (values: EditProfileFormValues) => {
     try {

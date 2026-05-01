@@ -7,6 +7,7 @@ import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
+import { toast, ToastContainer } from "react-toastify";
 
 
 interface Book {
@@ -31,6 +32,7 @@ const Book: React.FC = () => {
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
 
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -43,12 +45,22 @@ const Book: React.FC = () => {
         clearId();
         router.push("/login");
     }
-};
+  };
 
-
-const startReading = (): void => {
+  const startReading = (): void => {
     router.push(`/session/`);
   } ;
+
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      toast.error("You need to be logged in to access this page.", {
+        autoClose: 2000,
+        onClose: () => router.push("/login"),
+      });
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
 
   useEffect(() => {
     if (!id) return;
@@ -66,6 +78,10 @@ const startReading = (): void => {
 
     fetchBook();
   }, [id, apiService]);
+
+  if (!isAuthorized) {
+    return <ToastContainer position="top-center" />;
+  }
 
   if (loading) {
     return <div style={{ padding: 20 }}>Loading book...</div>;

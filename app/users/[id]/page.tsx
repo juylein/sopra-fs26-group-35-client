@@ -12,6 +12,7 @@ import "@/styles/dashboard.css"
 import {Shelf} from "@/types/shelf";
 import { Book } from "@/types/book";
 import { ShelfBook } from "@/types/shelfbook";
+import { toast, ToastContainer } from "react-toastify";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -103,6 +104,16 @@ const Dashboard: React.FC = () => {
                 router.push("/login");
                 return;
             }
+            if (!userId) return;
+
+            if (String(id) !== String(userId)) {
+                toast.error("You are not allowed to access another user's dashboard.", {
+                    autoClose: 2000,
+                    onClose: () => router.push(`/users/${userId}/`),
+                });
+                return;
+            }
+
             try {
                 const fetchedUser = await apiService.get<User>(`/users/${id}`);
                 setUser(fetchedUser);
@@ -116,7 +127,7 @@ const Dashboard: React.FC = () => {
         };
 
         fetchUser();
-    }, [apiService, id, router]);
+    }, [apiService, id, userId, router]);
 
     useEffect(() => {
         if (!timerRunning) return;
@@ -132,6 +143,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="dashboard-root">
+            <ToastContainer position="top-center" />
             <Sidebar />
 
             {/* Top Bar */}
