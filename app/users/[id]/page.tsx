@@ -33,8 +33,6 @@ const Dashboard: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const apiService = useApi();
     const [user, setUser] = useState<User | null>(null);
-    const [timerRunning, setTimerRunning] = useState(false);
-    const [seconds, setSeconds] = useState(35 * 60 + 43);
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -45,6 +43,10 @@ const Dashboard: React.FC = () => {
     const { value: savedShelfId, set: saveShelfId } = useLocalStorage<number | null>("dashboard_shelf_id", null);
     const [selectedShelfId, setSelectedShelfId] = useState<number | null>(savedShelfId);
 
+    const [latestSession, setLatestSession] = useState<{ id: number; bookId: string; bookTitle: string; coverUrl: string | null; } | null>(null);
+    const [latestSessionEmpty, setLatestSessionEmpty] = useState(false);
+    const [resumeLoading, setResumeLoading] = useState(false);
+
     // Compute selected shelf and books to display based on selectedShelfId
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const displayBooks = selectedShelf?.shelfBooks.map(sb => sb.book) ?? [];
@@ -52,8 +54,9 @@ const Dashboard: React.FC = () => {
     // Derive stats from the "Read" shelf
     const readShelf = shelves.find((s) => s.name === "Read") ?? null;
     const booksRead = readShelf?.shelfBooks.length ?? 0;
-    const pagesRead = readShelf?.shelfBooks.reduce((sum, sb) => sum + (sb.book.pages ?? 0), 0) ?? 0;
-
+    const pagesRead = shelves
+        .flatMap((s) => s.shelfBooks ?? [])
+        .reduce((sum, sb) => sum + (sb.pagesRead ?? 0), 0);
 
     // Fetch shelves on component mount
     useEffect(() => {
@@ -74,6 +77,45 @@ const Dashboard: React.FC = () => {
     };
     fetchShelves();
     }, [apiService, userId]);
+
+    useEffect(() => {
+        const fetchLatest = async () => {
+            try {
+                const data = await apiService.get<{ id: number; bookId: string; bookTitle: string; coverUrl: string | null }>(
+                    `/users/${userId}/sessions/latest`
+                );
+                setLatestSession(data);
+            } catch {
+                setLatestSessionEmpty(true);
+            }
+        };
+        if (userId) fetchLatest();
+    }, [userId, apiService]);
+
+    const handleResume = async () => {
+        if (!latestSession) return;
+        setResumeLoading(true);
+        try {
+            const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
+            const shelfBook = allShelfBooks.find((sb) => String(sb.book.id) === String(latestSession.bookId));
+
+            if (!shelfBook) {
+                alert("Could not find this book in your shelves.");
+                return;
+            }
+
+            const newSession = await apiService.post<{ id: number }>(
+                `/users/${userId}/sessions`,
+                [{ userId, shelfBookId: shelfBook.id }]
+            );
+            await apiService.put(`/users/${userId}/sessions/${newSession.id}/started`, {});
+            router.push(`/session?shelfBookId=${shelfBook.id}`);
+        } catch {
+            alert("Failed to start session.");
+        } finally {
+            setResumeLoading(false);
+        }
+    };
 
     // Handler for shelf change
     const handleShelfSelect = (shelf: Shelf) => {
@@ -128,18 +170,6 @@ const Dashboard: React.FC = () => {
 
         fetchUser();
     }, [apiService, id, userId, router]);
-
-    useEffect(() => {
-        if (!timerRunning) return;
-        const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
-        return () => clearInterval(interval);
-    }, [timerRunning]);
-
-    const formatTime = (s: number) => {
-        const m = Math.floor(s / 60).toString().padStart(2, "0");
-        const sec = (s % 60).toString().padStart(2, "0");
-        return `${m}:${sec}`;
-    };
 
     return (
         <div className="dashboard-root">
@@ -238,22 +268,53 @@ const Dashboard: React.FC = () => {
                     </div>
 
                         <div className="bookshelf-session">
-                            <div className="bookshelf-session-cover" />
-                            <div className="bookshelf-session-info">
-                                <div className="bookshelf-session-title">Wuthering Heights – Emily Brontë</div>
-                                <div className="bookshelf-session-subtitle">Session Paused · Page 244/359</div>
-                                <div className="bookshelf-progress-bar">
-                                    <div className="bookshelf-progress-fill" />
+                            {latestSessionEmpty ? (
+                                <div className="bookshelf-session-empty">
+                                    No reading session yet — start one to see it here.
                                 </div>
-                                <div className="bookshelf-progress-label">68% complete</div>
-                            </div>
-                            <div className="bookshelf-timer">{formatTime(seconds)}</div>
-                            <Button
-                                className={timerRunning ? "bookshelf-session-btn-pause" : "bookshelf-session-btn-resume"}
-                                onClick={() => setTimerRunning((r) => !r)}
-                            >
-                                {timerRunning ? "Pause Session" : "Resume Session"}
-                            </Button>
+                            ) : latestSession ? (
+                                <>
+                                    <div className="bookshelf-session-cover">
+                                        {latestSession.coverUrl && (
+                                            <img
+                                                src={latestSession.coverUrl}
+                                                alt={latestSession.bookTitle}
+                                                className="bookshelf-session-cover-img"
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="bookshelf-session-info">
+                                        <div className="bookshelf-session-title">{latestSession.bookTitle}</div>
+                                        {(() => {
+                                            const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
+                                            const shelfBook = allShelfBooks.find((sb) => String(sb.book.id) === String(latestSession.bookId));
+                                            const pct = shelfBook?.book.pages
+                                                ? Math.round(((shelfBook.pagesRead ?? 0) / shelfBook.book.pages) * 100)
+                                                : 0;
+                                            return (
+                                                <>
+                                                    <div className="bookshelf-session-subtitle">
+                                                        Page {shelfBook?.pagesRead ?? 0} of {shelfBook?.book.pages ?? "?"}
+                                                    </div>
+                                                    <div className="bookshelf-progress-bar">
+                                                        <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
+                                                    </div>
+                                                    <div className="bookshelf-progress-label">{pct}% complete</div>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                    <Button
+                                        className="bookshelf-session-btn-resume"
+                                        onClick={handleResume}
+                                        loading={resumeLoading}
+                                    >
+                                        Resume Reading
+                                    </Button>
+                                </>
+                            ) : (
+                                <div className="bookshelf-session-empty">Loading...</div>
+                            )}
                         </div>
                         
                         {/* Shelf picker */}

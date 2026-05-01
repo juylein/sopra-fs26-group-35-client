@@ -152,6 +152,22 @@
 
 
 /* ─── Bookshelf ─────────────────────────────────── */
+.bookshelf-session-empty {
+    color: #aaa;
+    font-size: 14px;
+    margin: auto;
+}
+
+.bookshelf-session-cover {
+    overflow: hidden;
+    background: #e8e0cc;
+}
+
+.bookshelf-session-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 .bookshelf-card {
     background: #faf7f2;
     border: 1px solid #e0d8cc;
