@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/topbar";
 import "@/styles/quiz.css";
+import { toast, ToastContainer } from "react-toastify";
 
 interface Question {
   id: number;
@@ -117,7 +118,6 @@ const emptyQuestion = (): Question => ({
 
 const Quiz: React.FC = () => {
     const router = useRouter();
-    const { id } = useParams<{ id: string }>();
     const apiService = useApi();
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -128,7 +128,7 @@ const Quiz: React.FC = () => {
     const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
 
-    
+    const [isAuthorized, setIsAuthorized] = useState(false);
 
     const handleLogout = async (): Promise<void> => {
         try {
@@ -145,8 +145,12 @@ const Quiz: React.FC = () => {
 
     useEffect(() => {
         if (!localStorage.getItem("token")) {
-            router.push("/login");
-            return;
+            toast.error("You need to be logged in to access this page.", {
+                autoClose: 2000,
+                onClose: () => router.push("/login"),
+            });
+        } else {
+            setIsAuthorized(true);
         }
     }, [router]);
 
@@ -199,6 +203,10 @@ const Quiz: React.FC = () => {
     const [got, total] = score.split("/").map(Number);
     return Math.round((got / total) * 100);
     };
+
+    if (!isAuthorized) {
+        return <ToastContainer position="top-center" />;
+    }
 
     return (
         <div className="quiz-root">

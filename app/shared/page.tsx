@@ -39,7 +39,7 @@ const SharedReadingSession: React.FC = () => {
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
-    const [user, setUser] = useState<User | null>(null);
+    const [user] = useState<User | null>(null);
 
     // Lobby state
     const [view, setView] = useState<SessionView>("lobby");
@@ -51,6 +51,8 @@ const SharedReadingSession: React.FC = () => {
     const [seconds, setSeconds] = useState(0);
     const [running, setRunning] = useState(false);
     const isHost = true; // TODO: derive from session data once backend exists
+
+    const [isAuthorized, setIsAuthorized] = useState(false);
 
     const handleLogout = async (): Promise<void> => {
         try {
@@ -66,15 +68,15 @@ const SharedReadingSession: React.FC = () => {
     };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (!localStorage.getItem("token")) {
-                router.push("/login");
-                return;
-            }
-        };
-      
-        fetchUser();
-      }, [apiService, userId, router]);
+        if (!localStorage.getItem("token")) {
+            toast.error("You need to be logged in to access this page.", {
+                autoClose: 2000,
+                onClose: () => router.push("/login"),
+            });
+        } else {
+            setIsAuthorized(true);
+        }
+    }, [router]);
 
     // Timer tick
     useEffect(() => {
@@ -123,6 +125,10 @@ const SharedReadingSession: React.FC = () => {
     };
 
     const pct = selectedBook ? Math.round((currentPage / selectedBook.total) * 100) : 0;
+
+    if (!isAuthorized) {
+        return <ToastContainer position="top-center" />;
+    }
 
     return (
         <div className="dashboard-root">

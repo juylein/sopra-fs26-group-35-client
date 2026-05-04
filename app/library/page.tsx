@@ -1,28 +1,28 @@
 "use client"; 
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
 import { RotatingLines } from "react-loader-spinner";
 import { toast, ToastContainer } from "react-toastify";
-import { Button, message } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { DeleteOutlined } from "@ant-design/icons";
 import TopBar from "@/components/topbar";
 import "@/styles/library.css"
 import { useAppMessage } from "@/hooks/useAppMessage";
-import {Shelf} from "@/types/shelf";
-import { Book } from "@/types/book";
-import { ShelfBook } from "@/types/shelfbook";
+import { Shelf } from "@/types/shelf";
 
+// How many books fit per row — adjust to match actual .book width + gap
+const BOOKS_PER_ROW = 18;
+const MAX_ROWS = 2;
+const MAX_BOOKS_DISPLAYED = BOOKS_PER_ROW * MAX_ROWS;
 
 const Library: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const messageApi = useAppMessage();
 
-  const [loadingPath, setLoadingPath] = useState<string | null>(null);
+  const [loadingPath] = useState<string | null>(null);
 
   const [loadingData, setLoadingData] = useState<boolean>(false);
   const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -35,7 +35,8 @@ const Library: React.FC = () => {
   const [renamingShelfId, setRenamingShelfId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
 
-  const { id } = useParams();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
   
@@ -45,7 +46,7 @@ const Library: React.FC = () => {
       try {
         const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
         setShelves(data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load shelves");
       } finally {
         setLoadingData(false);
@@ -86,7 +87,7 @@ const Library: React.FC = () => {
       await apiService.put(`/users/${userId}/library/shelves/${shelfId}`, { name: renameValue });
       setShelves((prev) =>
         prev.map((s) => (s.id === shelfId ? { ...s, name: renameValue } : s))
-      );
+    );
       messageApi.success("Shelf renamed!");
       setRenamingShelfId(null);
       setRenameValue("");
@@ -98,7 +99,7 @@ const Library: React.FC = () => {
 
   const handleDeleteShelf = async (shelfId: number) => {
     try {
-      await apiService.delete(`/users/${userId}/library/shelves/${shelfId}`); // to be changed
+      await apiService.delete(`/users/${userId}/library/shelves/${shelfId}`);
       messageApi.success("Shelf deleted!");
       setShelves((prev) => prev.filter((s) => s.id !== shelfId));
     } catch (error) {
@@ -131,27 +132,42 @@ const Library: React.FC = () => {
 
   const handleLogout = async (): Promise<void> => {
     try {
-        if (!userId) { router.push("/login"); return; }
-        await apiService.put(`/users/${userId}/logout`, {});
+      if (!userId) { router.push("/login"); return; }
+      await apiService.put(`/users/${userId}/logout`, {});
     } catch (error) {
-        console.error("Logout error:", error);
+      console.error("Logout error:", error);
     } finally {
-        clearToken();
-        clearId();
-        router.push("/login");
+      clearToken();
+      clearId();
+      router.push("/login");
     }
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-        if (!localStorage.getItem("token")) {
-            router.push("/login");
-            return;
-        }
-    };
+    if (!localStorage.getItem("token")) {
+      toast.error("You need to be logged in to access this page.", {
+        autoClose: 2000,
+        onClose: () => router.push("/login"),
+      });
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
 
-    fetchUser();
-  }, [apiService, userId, router]);
+  if (!isAuthorized) {
+    return <ToastContainer position="top-center" />;
+  }
+
+  // Utility to chunk books into rows for display
+  const chunkBooks = (shelfBooks: Shelf["shelfBooks"]) => {
+    const displayed = shelfBooks.slice(0, MAX_BOOKS_DISPLAYED);
+    const rows: Shelf["shelfBooks"][] = [];
+    for (let i = 0; i < displayed.length; i += BOOKS_PER_ROW) {
+      rows.push(displayed.slice(i, i + BOOKS_PER_ROW));
+    }
+    if (rows.length === 0) rows.push([]);
+    return rows;
+  };
 
   return (
     <div className="library-container">
@@ -174,130 +190,140 @@ const Library: React.FC = () => {
             </div>
 
             {/* User Shelves */}
-            {shelves.map((shelf) => (
-              <div key={shelf.id} className="section"
-              style={{ position: "relative", paddingTop: 20 }} >
-              {/* Section title — shows rename input when editing a non-default shelf */}
-              {renamingShelfId === shelf.id ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                  <input
-                    className="modal-input"
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleRenameShelf(shelf.id)}
-                    autoFocus
-                    style={{ maxWidth: 260 }}
-                  />
-                  <button className="primary-btn" onClick={() => handleRenameShelf(shelf.id)}>Save</button>
-                  <button className="primary-btn" onClick={() => { setRenamingShelfId(null); setRenameValue(""); }}>Cancel</button>
-                </div>
-              ) : (
-                <div className="section-title">{shelf.name}</div>
-              )}
+            {shelves.map((shelf) => {
+              const rows = chunkBooks(shelf.shelfBooks);
+              const hasMore = shelf.shelfBooks.length > MAX_BOOKS_DISPLAYED;
 
-              {/* Edit button */}
-              <button
-                onClick={() => {
-                  const entering = editingShelfId !== shelf.id;
-                  setEditingShelfId(entering ? shelf.id : null);
-                  if (entering && !isDefaultShelf(shelf.name)) {
-                    setRenamingShelfId(shelf.id);
-                    setRenameValue(shelf.name);
-                  } else {
-                    setRenamingShelfId(null);
-                    setRenameValue("");
-                  }
-                }}
-                className="edit-bookshelf-btn"
-                style={{ position: "absolute", top: 10, right: 120 }}
-              >
-                {editingShelfId === shelf.id ? "Done" : "Edit"}
-              </button>
-                
-                {/* Delete button grseyed out for default shelves */}  
-                <button
-                  onClick={() => {
-                    if (!isDefaultShelf(shelf.name)) {
-                      handleDeleteShelf(shelf.id);
-                    }
-                  }}
-                  className="delete-bookshelf-btn"
-                  title={
-                    isDefaultShelf(shelf.name)
-                      ? "Default shelves cannot be deleted"
-                      : "Delete Bookshelf"
-                  }
-                  disabled={isDefaultShelf(shelf.name)}
-                >
-                  Delete Bookshelf
-                </button>
-                <div className="bookshelf-shelf">
+              return (
+                <div key={shelf.id} className="section"
+                style={{ position: "relative", paddingTop: 20 }}>
 
-                  {shelf.shelfBooks.map((shelfBook) => (
-                  <div
-                    key={shelfBook.id}
-                    style={{ position: "relative" }} // important for overlay button
-                  >
-                    <div
-                      title={shelfBook.book.name}
-                      className="book"
-                      style={{ background: "#3a5a8b", cursor: "pointer" }}
-                      onClick={() => router.push(`/books/${shelfBook.book.id}`)}
-                    >
-                      {shelfBook.book.coverUrl ? (
-                        <img
-                          src={shelfBook.book.coverUrl}
-                          alt={shelfBook.book.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            borderRadius: 3,
-                          }}
-                        />
-                      ) : (
-                        shelfBook.book.name.split(" ").slice(0, 2).join(" ")
-                      )}
+                  {/* Section title — shows rename input when editing a non-default shelf */}
+                  {renamingShelfId === shelf.id ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <input
+                        className="modal-input"
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleRenameShelf(shelf.id)}
+                        autoFocus
+                        style={{ maxWidth: 260 }}
+                      />
+                      <button className="primary-btn" onClick={() => handleRenameShelf(shelf.id)}>Save</button>
+                      <button className="primary-btn" onClick={() => { setRenamingShelfId(null); setRenameValue(""); }}>Cancel</button>
                     </div>
+                  ) : (
+                    <div className="section-title">{shelf.name}</div>
+                  )}
 
-                    {/* DELETE BUTTON (only in edit mode) */}
-                    {editingShelfId === shelf.id && (
-                      <button
-                        onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, shelfBook.book.id); }}
-                        style={{
-                          position: "absolute",
-                          top: 4,
-                          right: 4,
-                          background: "#d32f2f",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: 20,
-                          height: 20,
-                          fontSize: 12,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                  {/* Add book button */}
-                  <div
-                    className="book add-book-btn"
-                    onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                  {/* Edit button */}
+                  <button
+                    onClick={() => {
+                      const entering = editingShelfId !== shelf.id;
+                      setEditingShelfId(entering ? shelf.id : null);
+                      if (entering && !isDefaultShelf(shelf.name)) {
+                        setRenamingShelfId(shelf.id);
+                        setRenameValue(shelf.name);
+                      } else {
+                        setRenamingShelfId(null);
+                        setRenameValue("");
+                      }
+                    }}
+                    className="edit-bookshelf-btn"
+                    style={{ position: "absolute", top: 10, right: 120 }}
                   >
-                    +
+                    {editingShelfId === shelf.id ? "Done" : "Edit"}
+                  </button>
+
+                  {/* Delete button (greyed out for default shelves)*/}
+                  <button
+                    onClick={() => {
+                      if (!isDefaultShelf(shelf.name)) {
+                        handleDeleteShelf(shelf.id);
+                      }
+                    }}
+                    className="delete-bookshelf-btn"
+                    title={
+                      isDefaultShelf(shelf.name)
+                        ? "Default shelves cannot be deleted"
+                        : "Delete Bookshelf"
+                      }
+                    disabled={isDefaultShelf(shelf.name)}
+                  >
+                    Delete Bookshelf
+                  </button>
+
+                  {/* Multi-row shelf — each row gets its own plank */}
+                  <div className="bookshelf-rows">
+                    {rows.map((rowBooks, rowIdx) => (
+                      <div key={rowIdx} className="bookshelf-shelf">
+                        {rowBooks.map((shelfBook) => (
+                          <div
+                            key={shelfBook.id}
+                            style={{ position: "relative" }}
+                            >
+                            <div
+                              title={shelfBook.book.name}
+                              className="book"
+                              style={{ background: "#8d8f91", cursor: "pointer" }}
+                              onClick={() => router.push(`/books/${shelfBook.book.id}`)}
+                            >
+                              {shelfBook.book.coverUrl ? (
+                                <img
+                                  src={shelfBook.book.coverUrl}
+                                  alt={shelfBook.book.name}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    borderRadius: 3,
+                                   }}
+                                />
+                              ) : (
+                                shelfBook.book.name.split(" ").slice(0, 2).join(" ")
+                              )}
+                            </div>
+
+                            {/* DELETE BUTTON (only in edit mode) */}
+                            {editingShelfId === shelf.id && (
+                              <button
+                                className="delete-book-btn"
+                                onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, shelfBook.book.id); }}
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Add button only on the last row */}
+                        {rowIdx === rows.length - 1 && (
+                          <div
+                            className="book add-book-btn"
+                            onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                          >
+                            +
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer row: count + View Bookshelf */}
+                  <div className="shelf-footer">
+                    <div className="bookshelf-count">
+                      {shelf.shelfBooks.length} books{hasMore && ` · showing ${MAX_BOOKS_DISPLAYED}`}
+                    </div>
+                    <button
+                      className="view-shelf-btn"
+                      onClick={() => router.push(`/library/${shelf.id}`)}
+                    >
+                      View Bookshelf →
+                    </button>
                   </div>
                 </div>
-                <div className="bookshelf-count">{shelf.shelfBooks.length} books</div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Create Shelf */}
             <div style={{ textAlign: "center", marginTop: 16 }}>
@@ -308,15 +334,6 @@ const Library: React.FC = () => {
                 + Create New Shelf
               </button>
             </div>
-
-            {/* Data
-            <div className="data-grid">
-              {loadingData ? (
-                <p>Loading data...</p>
-              ) : (
-                <pre>{JSON.stringify(shelves, null, 2)}</pre>
-              )}
-            </div> */}
           </div>
         </div>
 
@@ -335,12 +352,12 @@ const Library: React.FC = () => {
         <ToastContainer />
       </div>
 
-      
+
       {modalIsOpen && (
         <div
           className="modal-overlay"
           onClick={() => setModalIsOpen(false)}
-        >
+          >
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create new shelf</h2>
 

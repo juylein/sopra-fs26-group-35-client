@@ -1,4 +1,3 @@
-import { Book } from "./book";
 import { ShelfBook } from "./shelfbook";
 
 export interface Shelf {
