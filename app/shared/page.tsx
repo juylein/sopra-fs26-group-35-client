@@ -39,7 +39,7 @@ const SharedReadingSession: React.FC = () => {
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
-    const [user, setUser] = useState<User | null>(null);
+    const [user] = useState<User | null>(null);
 
     // Lobby state
     const [view, setView] = useState<SessionView>("lobby");

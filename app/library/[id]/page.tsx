@@ -58,7 +58,7 @@ const ShelfPage: React.FC = () => {
     };
 
     fetchShelves();
-  }, [userId]);
+  }, [userId, apiService, router]);
 
   const handleRemoveBook = async (bookId: number) => {
     if (!shelf) return;
@@ -82,7 +82,7 @@ const ShelfPage: React.FC = () => {
       );
 
       messageApi.success("Book removed");
-    } catch (error) {
+    } catch {
       messageApi.error("Failed to remove book");
     }
   };

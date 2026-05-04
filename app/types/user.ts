@@ -8,4 +8,5 @@ export interface User {
   creationDate: string | null;
   genres: string[] | null;
   friends: User[] | null;
+  online: boolean | null;
 }

@@ -93,7 +93,6 @@ const Discover: React.FC = () => {
 
     const [query, setQuery] = useState("");
     const [books, setBooks] = useState<GoogleBook[]>([]);
-    const [createdShelfBook, setCreatedShelfBook] = useState<GoogleBook[]>([]);
     const [searched, setSearched] = useState(false);
     const [loading, setLoading] = useState(false);
     const [defaultLabel, setDefaultLabel] = useState("");
@@ -368,7 +367,7 @@ const Discover: React.FC = () => {
         );
     
         fetchBooks(activeQuery, { sortBy, genre, minRating });
-    }, [sortBy, genre, minRating]);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = () => setOpenDropdownId(null);

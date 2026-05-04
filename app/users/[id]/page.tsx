@@ -9,10 +9,9 @@ import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/topbar";
 import "@/styles/dashboard.css"
-import {Shelf} from "@/types/shelf";
+import { Shelf } from "@/types/shelf";
 import { Book } from "@/types/book";
-import { ShelfBook } from "@/types/shelfbook";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -64,22 +63,22 @@ const Dashboard: React.FC = () => {
 
     // Fetch shelves on component mount
     useEffect(() => {
-    const fetchShelves = async () => {
-        if (!userId) return;
-        try {
-        const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
-        setShelves(data);
+        const fetchShelves = async () => {
+            if (!userId) return;
+            try {
+                const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+                setShelves(data);
 
-        // Always default to "Read" if nothing is saved yet
-        setSelectedShelfId((prev) => {
-            if (prev !== null) return prev;
-            return data.find((s) => s.name === "Read")?.id ?? null;
-        });
-        } catch (error) {
-        console.error("Failed to fetch shelves", error);
-        }
-    };
-    fetchShelves();
+                // Always default to "Read" if nothing is saved yet
+                setSelectedShelfId((prev) => {
+                    if (prev !== null) return prev;
+                    return data.find((s) => s.name === "Read")?.id ?? null;
+                });
+            } catch (error) {
+                console.error("Failed to fetch shelves", error);
+            }
+        };
+        fetchShelves();
     }, [apiService, userId]);
 
     useEffect(() => {
@@ -123,9 +122,9 @@ const Dashboard: React.FC = () => {
 
     // Handler for shelf change
     const handleShelfSelect = (shelf: Shelf) => {
-    setSelectedShelfId(shelf.id);
-    saveShelfId(shelf.id);
-    setDropdownOpen(false);
+        setSelectedShelfId(shelf.id);
+        saveShelfId(shelf.id);
+        setDropdownOpen(false);
     };
 
     const handleLogout = async (): Promise<void> => {
@@ -151,14 +150,6 @@ const Dashboard: React.FC = () => {
                 return;
             }
             if (!userId) return;
-
-            if (String(id) !== String(userId)) {
-                toast.error("You are not allowed to access another user's dashboard.", {
-                    autoClose: 2000,
-                    onClose: () => router.push(`/users/${userId}/`),
-                });
-                return;
-            }
 
             try {
                 const fetchedUser = await apiService.get<User>(`/users/${id}`);
@@ -190,86 +181,88 @@ const Dashboard: React.FC = () => {
                     {/* Profile Card */}
                     <div className="db-card">
 
-                    {/* Row 1: avatar + name/meta + edit button */}
-                    <div className="profile-header">
-                        <div className="profile-avatar">
-                        {user?.name?.[0]?.toUpperCase() ?? "U"}
-                        </div>
-                        <div className="profile-info">
-                        <h2 className="profile-name">{user?.name ?? "..."}</h2>
-                        <div className="profile-meta">
-                            @{user?.username ?? "..."} · Member since{" "}
-                            {user?.creationDate
-                            ? new Date(user.creationDate).toLocaleDateString("en-US", {
-                                year: "numeric", month: "long", day: "numeric",
-                                })
-                            : "..."}
-                        </div>
-                        </div>
-                        <Button
-                        className="profile-edit-btn"
-                        onClick={() => router.push(`/users/${id}/edit`)}
-                        >
-                        Edit Profile
-                        </Button>
-                    </div>
-
-                    {/* Row 2: bio */}
-                    <div className="profile-bio-row">
-                    <div className="profile-bio-label">Bio:</div>
-                    <div className="profile-bio-content">
-                        {user?.bio ? (
-                        user.bio
-                        ) : (
-                        <span style={{ color: "#bbb" }}>
-                            No bio yet —{" "}
-                            <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
-                                add one
-                            </span>
-                        </span>
-                        )}
-                    </div>
-                    </div>
-
-                    {/* Row 3: genres */}
-                    <div className="profile-bio-row">
-                    <div className="profile-bio-label">Favourite genre:</div>
-                    <div className="profile-bio-content">
-                        {user?.genres ? (
-                        user.genres.join(", ")
-                        ) : (
-                    <span style={{ color: "#bbb" }}>
-                        No favourite genres yet —{" "}
-                        <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
-                            add them
-                        </span>
-                    </span>
-                        )}
-                    </div>
-                    </div>
-
-                    {/* Row 4: stat cells */}
-                    <div className="profile-stats">
-                        {[
-                            [booksRead.toString(), "books read"],
-                            [pagesRead.toLocaleString(), "pages read"],
-                            ["32", "points"],
-                            ["4", "friends"],
-                            ].map(([val, label], i) => (
-                            <div key={i} className="profile-stat-cell">
-                                {val}
-                                <div className="profile-stat-label">{label}</div>
+                        {/* Row 1: avatar + name/meta + edit button */}
+                        <div className="profile-header">
+                            <div className="profile-avatar">
+                                {user?.name?.[0]?.toUpperCase() ?? "U"}
                             </div>
-                        ))}
-                    </div>
+                            <div className="profile-info">
+                                <h2 className="profile-name">{user?.name ?? "..."}</h2>
+                                <div className="profile-meta">
+                                    @{user?.username ?? "..."} · Member since{" "}
+                                    {user?.creationDate
+                                        ? new Date(user.creationDate).toLocaleDateString("en-US", {
+                                            year: "numeric", month: "long", day: "numeric",
+                                        })
+                                        : "..."}
+                                </div>
+                            </div>
+                            {id === userId && (
+                                <Button
+                                    className="profile-edit-btn"
+                                    onClick={() => router.push(`/users/${id}/edit`)}
+                                >
+                                    Edit Profile
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Row 2: bio */}
+                        <div className="profile-bio-row">
+                            <div className="profile-bio-label">Bio:</div>
+                            <div className="profile-bio-content">
+                                {user?.bio ? (
+                                    user.bio
+                                ) : (
+                                    <span style={{ color: "#bbb" }}>
+                                        No bio yet —{" "}
+                                        <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
+                                            add one
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Row 3: genres */}
+                        <div className="profile-bio-row">
+                            <div className="profile-bio-label">Favourite genre:</div>
+                            <div className="profile-bio-content">
+                                {user?.genres ? (
+                                    user.genres.join(", ")
+                                ) : (
+                                    <span style={{ color: "#bbb" }}>
+                                        No favourite genres yet —{" "}
+                                        <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
+                                            add them
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Row 4: stat cells */}
+                        <div className="profile-stats">
+                            {[
+                                [booksRead.toString(), "books read"],
+                                [pagesRead.toLocaleString(), "pages read"],
+                                ["32", "points"],
+                                ["4", "friends"],
+                            ].map(([val, label], i) => (
+                                <div key={i} className="profile-stat-cell">
+                                    {val}
+                                    <div className="profile-stat-label">{label}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Bookshelf */}
                     <div className="bookshelf-card">
-                    {/* Bookshelf header */}
-                    <div className="bookshelf-header">
-                    <div className="bookshelf-title">{user?.name ?? "User"}&apos;s Bookshelf</div>
-                    </div>
+                        {/* Bookshelf header */}
+                        <div className="bookshelf-header">
+                            <div className="bookshelf-title">{user?.name ?? "User"}&apos;s Bookshelf</div>
+                        </div>
 
                         <div className="bookshelf-session">
                             {latestSessionEmpty ? (
@@ -320,69 +313,69 @@ const Dashboard: React.FC = () => {
                                 <div className="bookshelf-session-empty">Loading...</div>
                             )}
                         </div>
-                        
+
                         {/* Shelf picker */}
                         <div className="shelf-picker">
-                        <button className="shelf-picker-btn" onClick={() => setDropdownOpen((o) => !o)}>
-                            {selectedShelf?.name ?? "Select shelf"}
-                            <span style={{ fontSize: 10 }}>{dropdownOpen ? "▲" : "▼"}</span>
-                        </button>
+                            <button className="shelf-picker-btn" onClick={() => setDropdownOpen((o) => !o)}>
+                                {selectedShelf?.name ?? "Select shelf"}
+                                <span style={{ fontSize: 10 }}>{dropdownOpen ? "▲" : "▼"}</span>
+                            </button>
 
-                        {dropdownOpen && (
-                            <div className="shelf-picker-dropdown">
-                            {shelves.map((shelf) => (
-                                <div
-                                key={shelf.id}
-                                onClick={() => handleShelfSelect(shelf)}
-                                className={`shelf-picker-item ${shelf.id === selectedShelfId ? "active" : "inactive"}`}
-                                >
-                                <span>{shelf.name}</span>
-                                <span className="shelf-picker-item-count">{shelf.shelfBooks.length}</span>
+                            {dropdownOpen && (
+                                <div className="shelf-picker-dropdown">
+                                    {shelves.map((shelf) => (
+                                        <div
+                                            key={shelf.id}
+                                            onClick={() => handleShelfSelect(shelf)}
+                                            className={`shelf-picker-item ${shelf.id === selectedShelfId ? "active" : "inactive"}`}
+                                        >
+                                            <span>{shelf.name}</span>
+                                            <span className="shelf-picker-item-count">{shelf.shelfBooks.length}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                            </div>
-                        )}
+                            )}
                         </div>
 
                         {/* Dynamic books from selected shelf */}
                         {(() => {
-                        const rows: Book[][] = [];
-                        const cappedBooks = displayBooks.slice(0, SHELF_MAX);
-                        for (let i = 0; i < cappedBooks.length; i += BOOKS_PER_ROW) {
-                            rows.push(cappedBooks.slice(i, i + BOOKS_PER_ROW));
-                        }
-                        if (rows.length === 0) rows.push([]);
+                            const rows: Book[][] = [];
+                            const cappedBooks = displayBooks.slice(0, SHELF_MAX);
+                            for (let i = 0; i < cappedBooks.length; i += BOOKS_PER_ROW) {
+                                rows.push(cappedBooks.slice(i, i + BOOKS_PER_ROW));
+                            }
+                            if (rows.length === 0) rows.push([]);
 
-                        return (
-                            <div className="bookshelf-rows">
-                            {rows.map((rowBooks, rowIdx) => (
-                                <div key={rowIdx} className="bookshelf-shelf">
-                                    {rowBooks.length === 0 ? (
-                                        <div className="shelf-empty">No books on this shelf yet.</div>
-                                    ) : (
-                                rowBooks.map((book) => (
-                                    <div
-                                    key={book.id}
-                                    title={book.name}
-                                    className="book-spine"
-                                    onClick={() => router.push(`/books/${book.id}`)}
-                                    >
-                                    {book.coverUrl ? (
-                                        <img
-                                        src={book.coverUrl}
-                                        alt={book.name}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
-                                        />
-                                    ) : (
-                                        book.name.split(" ").slice(0, 2).join(" ")
-                                    )}
-                                    </div>
-                                ))
-                                )}
+                            return (
+                                <div className="bookshelf-rows">
+                                    {rows.map((rowBooks, rowIdx) => (
+                                        <div key={rowIdx} className="bookshelf-shelf">
+                                            {rowBooks.length === 0 ? (
+                                                <div className="shelf-empty">No books on this shelf yet.</div>
+                                            ) : (
+                                                rowBooks.map((book) => (
+                                                    <div
+                                                        key={book.id}
+                                                        title={book.name}
+                                                        className="book-spine"
+                                                        onClick={() => router.push(`/books/${book.id}`)}
+                                                    >
+                                                        {book.coverUrl ? (
+                                                            <img
+                                                                src={book.coverUrl}
+                                                                alt={book.name}
+                                                                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
+                                                            />
+                                                        ) : (
+                                                            book.name.split(" ").slice(0, 2).join(" ")
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                            </div>
-                        );
+                            );
                         })()}
 
                         {/* Dynamic count */}
@@ -391,50 +384,50 @@ const Dashboard: React.FC = () => {
 
                     {/* Recent Readings */}
                     <div className="recent-readings-card">
-                    <div className="recent-readings-title">Recent Readings</div>
-                    {(() => {
-                    const recentBooks = (
-                        shelves.find((s) => s.name === "Recent Readings")?.shelfBooks?.map((sb) => sb.book) ?? []
-                    ).slice(0, RECENT_MAX);
+                        <div className="recent-readings-title">Recent Readings</div>
+                        {(() => {
+                            const recentBooks = (
+                                shelves.find((s) => s.name === "Recent Readings")?.shelfBooks?.map((sb) => sb.book) ?? []
+                            ).slice(0, RECENT_MAX);
 
-                    const rows: Book[][] = [];
-                    for (let i = 0; i < recentBooks.length; i += 12) {
-                        rows.push(recentBooks.slice(i, i + 12));
-                    }
-                    if (rows.length === 0) rows.push([]); // always at least one plank
+                            const rows: Book[][] = [];
+                            for (let i = 0; i < recentBooks.length; i += 12) {
+                                rows.push(recentBooks.slice(i, i + 12));
+                            }
+                            if (rows.length === 0) rows.push([]); // always at least one plank
 
-                    return (
-                        <div className="bookshelf-rows">
-                        {rows.map((rowBooks, rowIdx) => (
-                            <div key={rowIdx} className="bookshelf-shelf">
-                            {rowBooks.length === 0 ? (
-                                <div className="shelf-empty">No recent readings yet.</div>
-                            ) : (
-                                rowBooks.map((book) => (
-                                <div
-                                    key={book.id}
-                                    title={book.name}
-                                    className="book-spine-sm"
-                                    style={{ cursor: "pointer" }}
-                                    onClick={() => router.push(`/books/${book.id}`)}
-                                >
-                                    {book.coverUrl ? (
-                                    <img
-                                        src={book.coverUrl}
-                                        alt={book.name}
-                                        className="book-cover-img"
-                                    />
-                                    ) : (
-                                    book.name.split(" ").slice(0, 2).join(" ")
-                                    )}
+                            return (
+                                <div className="bookshelf-rows">
+                                    {rows.map((rowBooks, rowIdx) => (
+                                        <div key={rowIdx} className="bookshelf-shelf">
+                                            {rowBooks.length === 0 ? (
+                                                <div className="shelf-empty">No recent readings yet.</div>
+                                            ) : (
+                                                rowBooks.map((book) => (
+                                                    <div
+                                                        key={book.id}
+                                                        title={book.name}
+                                                        className="book-spine-sm"
+                                                        style={{ cursor: "pointer" }}
+                                                        onClick={() => router.push(`/books/${book.id}`)}
+                                                    >
+                                                        {book.coverUrl ? (
+                                                            <img
+                                                                src={book.coverUrl}
+                                                                alt={book.name}
+                                                                className="book-cover-img"
+                                                            />
+                                                        ) : (
+                                                            book.name.split(" ").slice(0, 2).join(" ")
+                                                        )}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                                ))
-                            )}
-                            </div>
-                        ))}
-                        </div>
-                    );
-                    })()}
+                            );
+                        })()}
                     </div>
 
                     {/* Bottom Row */}

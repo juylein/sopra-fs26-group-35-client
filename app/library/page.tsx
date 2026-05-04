@@ -1,20 +1,16 @@
 "use client"; 
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
 import { RotatingLines } from "react-loader-spinner";
 import { toast, ToastContainer } from "react-toastify";
-import { Button, message } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { DeleteOutlined } from "@ant-design/icons";
 import TopBar from "@/components/topbar";
 import "@/styles/library.css"
 import { useAppMessage } from "@/hooks/useAppMessage";
-import {Shelf} from "@/types/shelf";
-import { Book } from "@/types/book";
-import { ShelfBook } from "@/types/shelfbook";
+import { Shelf } from "@/types/shelf";
 
 // How many books fit per row — adjust to match actual .book width + gap
 const BOOKS_PER_ROW = 18;
@@ -26,7 +22,7 @@ const Library: React.FC = () => {
   const apiService = useApi();
   const messageApi = useAppMessage();
 
-  const [loadingPath, setLoadingPath] = useState<string | null>(null);
+  const [loadingPath] = useState<string | null>(null);
 
   const [loadingData, setLoadingData] = useState<boolean>(false);
   const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -41,7 +37,6 @@ const Library: React.FC = () => {
 
   const [isAuthorized, setIsAuthorized] = useState(false);
 
-  const { id } = useParams();
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
   
@@ -51,7 +46,7 @@ const Library: React.FC = () => {
       try {
         const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
         setShelves(data);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load shelves");
       } finally {
         setLoadingData(false);

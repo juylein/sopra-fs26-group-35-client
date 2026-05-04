@@ -15,7 +15,6 @@ interface FriendRequestGetDTO {
   id: number;
   requesterId: number;
   recipientId: number;
-  FriendRequestStatus: string;
   createdAt: Date;
   resolvedAt: Date;
 };
@@ -24,13 +23,13 @@ const Friends: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const { handleErrorMessage } = useHandleErrorMessage();
-  const { clear: clearToken, value: token } = useLocalStorage<string>("token", "");
+  const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
+  const [friends, serUserFriends] = useState<User[]>([]);
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
-  const [friendRequests, setFriendRequests] = useState<any[]>([]);
+  const [friendRequests, setFriendRequests] = useState<FriendRequestGetDTO[]>([]);
   const [requesters, setRequesters] = useState<Record<number, User>>({});
-  const [friends, setFriends] = useState<User[]>([]); // TODO set friends
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   const handleLogout = async (): Promise<void> => {
@@ -40,9 +39,9 @@ const Friends: React.FC = () => {
     } catch (error) {
       handleErrorMessage(error);
     } finally {
-        clearToken();
-        clearId();
-        router.push("/login");
+      clearToken();
+      clearId();
+      router.push("/login");
     }
   };
 
@@ -56,7 +55,7 @@ const Friends: React.FC = () => {
       const friend = await apiService.get<User>(`/users/friends/${username}`);
       if (!friend?.id) {
         toast.error("User not found", {
-          className: "session-toast", 
+          className: "session-toast",
           progressClassName: "session-toast-progress",
         });
         return;
@@ -70,86 +69,10 @@ const Friends: React.FC = () => {
       );
 
       toast.success("Friend request sent!");
-    } catch (error: any) {
-    
-      const msg = error?.message || "";
-    
-      if (msg.toLowerCase().includes("not found")) {
-        toast.error("User not found", {
-          className: "session-toast",
-          progressClassName: "session-toast-progress",
-        });
-        return;
-      }
-
-      if (error?.status === 409 || error?.response?.status === 409) {
-        const msg =
-          error?.response?.data?.detail ||
-          error?.message ||
-          "Friend request already exists";
-    
-        toast.error(msg, {
-          className: "session-toast",
-          progressClassName: "session-toast-progress",
-        });
-        return;
-      }
-
-      if (error?.status === 400 || error?.response?.status === 409) {
-        const msg =
-          error?.response?.data?.detail ||
-          error?.message ||
-          "You cannot send a friend request to yourself";
-    
-        toast.error(msg, {
-          className: "session-toast",
-          progressClassName: "session-toast-progress",
-        });
-        return;
-      }
-
-    
-      toast.error("Something went wrong", {
-        className: "session-toast",
-        progressClassName: "session-toast-progress",
-      });
-    }
-  };
-
-  const fetchFriendRequests = async () => {
-    if (!userId) return;
-
-    try {
-      const response = await apiService.get<FriendRequestGetDTO[]>(
-        `/users/${userId}/friend-requests/incoming`
-      );
-
-      setFriendRequests(response);
-      await enrichFriendRequests(response);
     } catch (error) {
       handleErrorMessage(error);
-    }
-  };
-
-  const enrichFriendRequests = async (requests: FriendRequestGetDTO[]) => {
-    const results: Record<number, User> = {};
-
-    await Promise.all(
-      requests.map(async (req) => {
-        try {
-          const user = await apiService.get<User>(
-            `/users/${req.requesterId}`
-          );
-
-          results[req.requesterId] = user;
-        } catch (error) {
-          handleErrorMessage(error);
-        }
-      })
-    );
-
-    setRequesters(results);
-  };
+    };
+  }
 
   const acceptFriendRequest = async (id: number) => {
     try {
@@ -171,9 +94,7 @@ const Friends: React.FC = () => {
         {}
       );
 
-      setFriendRequests((prev) =>
-        prev.filter((r) => id !== id)
-      );
+      setFriendRequests((prev) => prev.filter((r) => r.id !== id));
 
     } catch (error) {
       handleErrorMessage(error);
@@ -192,7 +113,51 @@ const Friends: React.FC = () => {
   }, [router]);
 
   useEffect(() => {
+    const enrichFriendRequests = async (requests: FriendRequestGetDTO[]) => {
+      const results: Record<number, User> = {};
+  
+      await Promise.all(
+        requests.map(async (req) => {
+          try {
+            const user = await apiService.get<User>(`/users/${req.requesterId}`);
+            results[req.requesterId] = user;
+          } catch (error) {
+            handleErrorMessage(error);
+          }
+        })
+      );
+  
+      setRequesters(results);
+    };
+
+    const fetchUserFriends = async () => {
+      if (!userId) return;
+  
+      try {
+        const fetchedUser = await apiService.get<User>(`/users/${userId}`);
+        serUserFriends(fetchedUser.friends ?? []);
+      } catch (error) {
+        handleErrorMessage(error);
+      }
+    }
+
+    const fetchFriendRequests = async () => {
+      if (!userId) return;
+  
+      try {
+        const response = await apiService.get<FriendRequestGetDTO[]>(
+          `/users/${userId}/friend-requests/incoming`
+        );
+  
+        setFriendRequests(response);
+        await enrichFriendRequests(response);
+      } catch (error) {
+        handleErrorMessage(error);
+      }
+    };
+    
     fetchFriendRequests();
+    fetchUserFriends();
   }, [userId]);
 
   if (!isAuthorized) {
@@ -200,185 +165,185 @@ const Friends: React.FC = () => {
   }
 
   return (
-        
-        <div className="dashboard-root">
-        <Sidebar />
 
-        <TopBar onLogout={handleLogout} />
+    <div className="dashboard-root">
+      <Sidebar />
 
-        <div className="dashboard-main">
-            <div className="dashboard-content">
+      <TopBar onLogout={handleLogout} />
 
-                {/* Page Title */}
-                <div className="bookshelf-card" style={{ paddingBottom: 8 }}>
-                    <div className="bookshelf-title">Friends</div>
-                    <div className="bookshelf-sort" style={{ marginTop: 0 }}>
-                        Your reading companion.
-                    </div>
-                </div>
-        
-                        {/* Search + Add Friend */}
-                        <div>
-                          <input
-                              type="text"
-                              placeholder="Search by username"
-                              className="friends-search"
-                              value={searchValue}
-                              onChange={(e) => setSearchValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  searchUser(searchValue);
-                                }
-                              }}
-                            />
-                            {searchMessage && (
-                            <div style={{ color: "#b00020", marginTop: 6 }}>
-                              {searchMessage}
-                            </div>
-                          )}
-        
-                            <Button type="link" style={{ fontWeight: 500 }} onClick={() => searchUser(searchValue)}>
-                                + Add Friend
-                            </Button>
-                        </div>
-        
-        {/* Friend Requests */}
-        <div className="bottom-card" style={{ marginTop: 16 }}>
+      <div className="dashboard-main">
+        <div className="dashboard-content">
+
+          {/* Page Title */}
+          <div className="bookshelf-card" style={{ paddingBottom: 8 }}>
+            <div className="bookshelf-title">Friends</div>
+            <div className="bookshelf-sort" style={{ marginTop: 0 }}>
+              Your reading companion.
+            </div>
+          </div>
+
+          {/* Search + Add Friend */}
+          <div>
+            <input
+              type="text"
+              placeholder="Search by username"
+              className="friends-search"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  searchUser(searchValue);
+                }
+              }}
+            />
+            {searchMessage && (
+              <div style={{ color: "#b00020", marginTop: 6 }}>
+                {searchMessage}
+              </div>
+            )}
+
+            <Button type="link" style={{ fontWeight: 500 }} onClick={() => searchUser(searchValue)}>
+              + Add Friend
+            </Button>
+          </div>
+
+          {/* Friend Requests */}
+          <div className="bottom-card" style={{ marginTop: 16 }}>
             <div className="bottom-card-title">Friend Requests</div>
 
             {friendRequests.length === 0 ? (
-            <div style={{ marginTop: 10, color: "#777" }}>
-              No friend requests
-            </div>
-          ) : (
-            friendRequests.map((req) => {
-              const requester = requesters[req.requestId ?? req.requesterId];
+              <div style={{ marginTop: 10, color: "#777" }}>
+                No friend requests
+              </div>
+            ) : (
+              friendRequests.map((req) => {
+                const requester = requesters[req.requesterId];
 
-              return (
+                return (
+                  <div
+                    key={`${req.requesterId}-${req.recipientId}`}
+                    className="bookshelf-card"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 12,
+                    }}
+                  >
+                    {/* LEFT SIDE */}
+                    <div className="user-row">
+                      <div
+                        className="avatar"
+                        style={{
+                          background: "#f4c400",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 40,
+                          height: 40,
+                          borderRadius: "50%",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {requester?.username
+                          ? requester.username.substring(0, 2).toUpperCase()
+                          : "??"}
+                      </div>
+
+                      <div style={{ marginLeft: 10 }}>
+                        <div style={{ color: "#b00020", fontSize: 14 }}>
+                          Sent you a friend request
+                        </div>
+
+                        <div style={{ fontWeight: 600 }}>
+                          {requester?.username ?? `User #${req.requesterId}`}
+                        </div>
+
+                        <div className="bookshelf-sort">
+                          Status: {requester?.status ?? "Loading..."}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT SIDE */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <Button
+                        className="bookshelf-session-btn-resume"
+                        onClick={() => acceptFriendRequest(req.id)}
+                      >
+                        Accept
+                      </Button>
+
+                      <Button
+                        className="bookshelf-session-btn-pause"
+                        onClick={() => declineFriendRequest(req.id)}
+                      >
+                        Decline
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Friends */}
+          <div className="bottom-card" style={{ marginTop: 16 }}>
+            <div className="bottom-card-title">Friends</div>
+
+            {friends.length === 0 ? (
+              <div style={{ marginTop: 10, color: "#777" }}>
+                No friends yet
+              </div>
+            ) : (
+              friends.map((friend) => (
                 <div
-                key={`${req.requesterId}-${req.recipientId}`}
+                  key={friend.id}
                   className="bookshelf-card"
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    marginTop: 12,
+                    marginTop: 12
                   }}
                 >
-                  {/* LEFT SIDE */}
                   <div className="user-row">
                     <div
                       className="avatar"
-                      style={{
-                        background: "#f4c400",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        fontWeight: 600,
-                      }}
+                      style={{ background: "#2e7d32" }}
                     >
-                      {requester?.username
-                        ? requester.username.substring(0, 2).toUpperCase()
-                        : "??"}
+                      {friend.username?.substring(0, 2).toUpperCase()}
                     </div>
 
-                    <div style={{ marginLeft: 10 }}>
-                      <div style={{ color: "#b00020", fontSize: 14 }}>
-                        Sent you a friend request
-                      </div>
-
+                    <div>
                       <div style={{ fontWeight: 600 }}>
-                        {requester?.username ?? `User #${req.requestId ?? req.requesterId}`}
+                        {friend.name ?? friend.username}
                       </div>
 
                       <div className="bookshelf-sort">
-                        Status: {requester?.status ?? "Loading..."}
+                        @{friend.username}
+                      </div>
+
+                      <div style={{ fontSize: 13, color: "#555" }}>
+                        {friend.bio ?? "No bio"}
                       </div>
                     </div>
                   </div>
 
-                  {/* RIGHT SIDE */}
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <Button
-                      className="bookshelf-session-btn-resume"
-                      onClick={() => acceptFriendRequest(req.id)}
-                    >
-                      Accept
-                    </Button>
-
-                    <Button
-                      className="bookshelf-session-btn-pause"
-                      onClick={() => declineFriendRequest(req.id)}
-                    >
-                      Decline
-                    </Button>
-                  </div>
+                  <Button className="bookshelf-session-btn-resume" onClick={() => router.push(`/users/${friend.id}`)}>
+                    View Profile
+                  </Button>
                 </div>
-              );
-            })
-          )}
-                  </div>
-
-        {/* Friends */}
-        <div className="bottom-card" style={{ marginTop: 16 }}>
-          <div className="bottom-card-title">Friends</div>
-
-          {friends.length === 0 ? (
-  <div style={{ marginTop: 10, color: "#777" }}>
-    No friends yet
-  </div>
-) : (
-  friends.map((friend) => (
-    <div
-      key={friend.id}
-      className="bookshelf-card"
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 12
-      }}
-    >
-      <div className="user-row">
-        <div
-          className="avatar"
-          style={{ background: "#2e7d32" }}
-        >
-          {friend.username?.substring(0, 2).toUpperCase()}
-        </div>
-
-        <div>
-          <div style={{ fontWeight: 600 }}>
-            {friend.name ?? friend.username}
+              ))
+            )}
           </div>
 
-          <div className="bookshelf-sort">
-            @{friend.username}
-          </div>
-
-          <div style={{ fontSize: 13, color: "#555" }}>
-            {friend.bio ?? "No bio"}
-          </div>
         </div>
       </div>
-
-      <Button className="bookshelf-session-btn-resume">
-        View Profile
-      </Button>
+      <ToastContainer position="top-center" />
     </div>
-  ))
-)}
-        </div>
 
-      </div>
-    </div>
-    <ToastContainer position="top-center" />
-    </div>
-  
-);
-};
+  );
+  };
 
-export default Friends;
+  export default Friends;

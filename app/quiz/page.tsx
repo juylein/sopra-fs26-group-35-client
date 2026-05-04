@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
@@ -118,7 +118,6 @@ const emptyQuestion = (): Question => ({
 
 const Quiz: React.FC = () => {
     const router = useRouter();
-    const { id } = useParams<{ id: string }>();
     const apiService = useApi();
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");

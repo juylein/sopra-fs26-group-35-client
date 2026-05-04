@@ -9,11 +9,9 @@ import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
 import { SessionGetDTO } from "@/types/session";
-import {Shelf} from "@/types/shelf";
-import { Book } from "@/types/book";
+import { Shelf } from "@/types/shelf";
 import { ShelfBook } from "@/types/shelfbook";
 import { useSearchParams } from "next/navigation";
-
 
 const ReadingSession: React.FC = () => {
     const router = useRouter();
@@ -106,7 +104,7 @@ const ReadingSession: React.FC = () => {
         };
 
         autoStart();
-    }, [searchParams, shelves, session]);
+    }, [searchParams, shelves, session, apiService, userId]);
 
     // Timer tick
     useEffect(() => {
@@ -146,7 +144,7 @@ const ReadingSession: React.FC = () => {
             setRunning(true);
             setSession(session);
         }
-        catch(error){
+        catch {
             toast.error("Failed creating session");
         }
     };
@@ -177,7 +175,7 @@ const ReadingSession: React.FC = () => {
             setSelectedBook(null);
             setSession(null);
         
-        } catch (error) {
+        } catch {
             toast.error("Failed ending session");
         }
     };
