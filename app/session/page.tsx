@@ -18,6 +18,7 @@ import { useSearchParams } from "next/navigation";
 const ReadingSession: React.FC = () => {
     const router = useRouter();
     const apiService = useApi();
+    const searchParams = useSearchParams();
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -32,6 +33,8 @@ const ReadingSession: React.FC = () => {
     // Timer
     const [seconds, setSeconds] = useState(0);
     const [running, setRunning] = useState(false);
+
+    const [isAuthorized, setIsAuthorized] = useState(false);
 
 
     const handleLogout = async (): Promise<void> => {
@@ -49,9 +52,13 @@ const ReadingSession: React.FC = () => {
 
     useEffect(() => {
         if (!localStorage.getItem("token")) {
-            router.push("/login");
+            toast.error("You need to be logged in to access this page.", {
+                autoClose: 2000,
+                onClose: () => router.push("/login"),
+            });
             return;
         }
+        setIsAuthorized(true);
 
         if (session)
         {
@@ -72,6 +79,34 @@ const ReadingSession: React.FC = () => {
         if (userId) fetchShelves();
       }, [userId, session, apiService, router]);
 
+    useEffect(() => {
+        const autoShelfBookId = searchParams.get("shelfBookId");
+        if (!autoShelfBookId || shelves.length === 0 || session) return;
+
+        const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
+        const shelfBook = allShelfBooks.find((sb) => String(sb.id) === autoShelfBookId);
+        if (!shelfBook) return;
+
+        const autoStart = async () => {
+            try {
+                const newSession = await apiService.post<SessionGetDTO>(
+                    `/users/${userId}/sessions`,
+                    [{ userId, shelfBookId: shelfBook.id }]
+                );
+                await apiService.put<SessionGetDTO>(`/users/${userId}/sessions/${newSession.id}/started`, {});
+                setCurrentPage(shelfBook.pagesRead ?? 0);
+                setStartPage(shelfBook.pagesRead ?? 0);
+                setSeconds(0);
+                setRunning(true);
+                setSession(newSession);
+                setSelectedBook(shelfBook);
+            } catch {
+                toast.error("Failed to auto-start session.");
+            }
+        };
+
+        autoStart();
+    }, [searchParams, shelves, session]);
 
     // Timer tick
     useEffect(() => {
@@ -135,6 +170,7 @@ const ReadingSession: React.FC = () => {
             toast.success(`Session logged! You read for ${formatTime(seconds)}.`, {
                 className: "session-toast", 
                 progressClassName: "session-toast-progress",
+                onClose: () => router.push("/session"),
             });
 
             setSeconds(0);
@@ -154,6 +190,10 @@ const ReadingSession: React.FC = () => {
             .map((sb) => [sb.book.id, sb]) 
         ).values()
       );
+
+    if (!isAuthorized) {
+        return <ToastContainer position="top-center" />;
+    }
 
     return (
         <div className="dashboard-root">

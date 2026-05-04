@@ -7,6 +7,7 @@ import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/topbar";
 import "@/styles/quiz.css";
+import { toast, ToastContainer } from "react-toastify";
 
 interface Question {
   id: number;
@@ -128,7 +129,7 @@ const Quiz: React.FC = () => {
     const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
     const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
 
-    
+    const [isAuthorized, setIsAuthorized] = useState(false);
 
     const handleLogout = async (): Promise<void> => {
         try {
@@ -145,8 +146,12 @@ const Quiz: React.FC = () => {
 
     useEffect(() => {
         if (!localStorage.getItem("token")) {
-            router.push("/login");
-            return;
+            toast.error("You need to be logged in to access this page.", {
+                autoClose: 2000,
+                onClose: () => router.push("/login"),
+            });
+        } else {
+            setIsAuthorized(true);
         }
     }, [router]);
 
@@ -199,6 +204,10 @@ const Quiz: React.FC = () => {
     const [got, total] = score.split("/").map(Number);
     return Math.round((got / total) * 100);
     };
+
+    if (!isAuthorized) {
+        return <ToastContainer position="top-center" />;
+    }
 
     return (
         <div className="quiz-root">

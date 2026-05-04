@@ -11,7 +11,7 @@
     cursor: pointer;
 }
 
-.bookshelf-shelf {
+/* .bookshelf-shelf {
     background: linear-gradient(to bottom, #f5ede0 80%, #c8a878 80%, #a07840 100%);
     border-radius: 6px;
     padding: 16px 12px 0;
@@ -20,12 +20,90 @@
     gap: 6px;
     margin-bottom: 8px;
     min-height: 110px;
-}
+} */
 
 .bookshelf-count {
     font-size: 12px;
     color: #7a6e5e;
 }
+
+/* Multi-row shelf container */
+.bookshelf-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Override: each row is now its own shelf plank, no wrapping */
+.bookshelf-shelf {
+  display: flex;
+  flex-wrap: nowrap; /* single row per plank */
+  gap: 6px;
+  padding: 16px 12px 0;
+  background: linear-gradient(to bottom, #f5ede0 80%, #c8a878 80%, #a07840 100%);
+  border-radius: 0; /* square between rows */
+  min-height: 110px;
+  margin-bottom: 0;
+}
+
+/* Round the top of the first plank and bottom of the last */
+.bookshelf-rows .bookshelf-shelf:first-child {
+  border-radius: 6px 6px 0 0;
+}
+.bookshelf-rows .bookshelf-shelf:last-child {
+  border-radius: 0 0 6px 6px;
+  margin-bottom: 8px;
+}
+.bookshelf-rows .bookshelf-shelf:only-child {
+  border-radius: 6px;
+}
+
+/* Shelf footer: count + View button side by side */
+.shelf-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+/* View Bookshelf button */
+.view-shelf-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  color: #7a6e5e;
+  cursor: pointer;
+  padding: 2px 0;
+  font-family: inherit;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.view-shelf-btn:hover {
+  color: #3a5a8b;
+}
+
+/* Back button */
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #7a6e5e;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+
+.back-btn:hover {
+  color: #3a5a8b;
+}
+
 /* Layout */
 .library-container {
     display: flex;
@@ -35,7 +113,7 @@
 
 /* Delete bookshelf */
 .delete-bookshelf-btn {
-  position: absolute;           /* 🔥 bring this back */
+  position: absolute;
   top: 10px;
   right: 25px;
 
