@@ -31,6 +31,7 @@ const Friends: React.FC = () => {
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
   const [requesters, setRequesters] = useState<Record<number, User>>({});
   const [friends, setFriends] = useState<User[]>([]); // TODO set friends
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -180,21 +181,25 @@ const Friends: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-        if (!localStorage.getItem("token")) {
-            router.push("/login");
-            return;
-        }
-    };
-
-    fetchUser();
-  }, [apiService, userId, router]);
+    if (!localStorage.getItem("token")) {
+      toast.error("You need to be logged in to access this page.", {
+        autoClose: 2000,
+        onClose: () => router.push("/login"),
+      });
+    } else {
+      setIsAuthorized(true);
+    }
+  }, [router]);
 
   useEffect(() => {
     fetchFriendRequests();
   }, [userId]);
 
-    return (
+  if (!isAuthorized) {
+    return <ToastContainer position="top-center" />;
+  }
+
+  return (
         
         <div className="dashboard-root">
         <Sidebar />
