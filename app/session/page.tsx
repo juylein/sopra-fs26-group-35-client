@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
@@ -13,10 +13,11 @@ import { Shelf } from "@/types/shelf";
 import { ShelfBook } from "@/types/shelfbook";
 import { useSearchParams } from "next/navigation";
 
-const ReadingSession: React.FC = () => {
+const ReadingSessionComponent = () => {
     const router = useRouter();
     const apiService = useApi();
     const searchParams = useSearchParams();
+    const autoShelfBookId = searchParams.get("shelfId");
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
@@ -78,7 +79,6 @@ const ReadingSession: React.FC = () => {
       }, [userId, session, apiService, router]);
 
     useEffect(() => {
-        const autoShelfBookId = searchParams.get("shelfBookId");
         if (!autoShelfBookId || shelves.length === 0 || session) return;
 
         const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
@@ -104,7 +104,7 @@ const ReadingSession: React.FC = () => {
         };
 
         autoStart();
-    }, [searchParams, shelves, session, apiService, userId]);
+    }, [searchParams, autoShelfBookId, shelves, session, apiService, userId]);
 
     // Timer tick
     useEffect(() => {
@@ -422,5 +422,11 @@ const ReadingSession: React.FC = () => {
         </div>
     );
 };
+
+const ReadingSession: React.FC = () => (
+    <Suspense fallback={<div>Loading...</div>}>
+        <ReadingSessionComponent />
+    </Suspense>
+);
 
 export default ReadingSession;
