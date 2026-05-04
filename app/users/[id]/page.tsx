@@ -28,6 +28,10 @@ const LB = [
     { rank: 4, name: "Natalia", points: 52, color: "#5a5a5a" },
 ];
 
+const BOOKS_PER_ROW = 18;
+const SHELF_MAX = BOOKS_PER_ROW * 3;
+const RECENT_MAX = BOOKS_PER_ROW * 1;
+
 const Dashboard: React.FC = () => {
     const router = useRouter();
     const { id } = useParams<{ id: string }>();
@@ -340,32 +344,46 @@ const Dashboard: React.FC = () => {
                         )}
                         </div>
 
-                        {/* Dynamic books */}
-                        <div className="bookshelf-shelf">
-                        {displayBooks.length === 0 ? (
-                            <div className="shelf-empty">No books on this shelf yet.</div>
-                        ) : (
-                            displayBooks.map((book) => (
-                            <div
-                                key={book.id}
-                                title={book.name}
-                                className="book-spine"
-                                style={{ cursor: "pointer" }}
-                                onClick={() => router.push(`/books/${book.id}`)}
-                            >
-                                {book.coverUrl ? (
-                                <img
-                                    src={book.coverUrl}
-                                    alt={book.name}
-                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
-                                />
-                                ) : (
-                                book.name.split(" ").slice(0, 2).join(" ")
+                        {/* Dynamic books from selected shelf */}
+                        {(() => {
+                        const rows: Book[][] = [];
+                        const cappedBooks = displayBooks.slice(0, SHELF_MAX);
+                        for (let i = 0; i < cappedBooks.length; i += BOOKS_PER_ROW) {
+                            rows.push(cappedBooks.slice(i, i + BOOKS_PER_ROW));
+                        }
+                        if (rows.length === 0) rows.push([]);
+                        
+                        return (
+                            <div className="bookshelf-rows">
+                            {rows.map((rowBooks, rowIdx) => (
+                                <div key={rowIdx} className="bookshelf-shelf">
+                                    {rowBooks.length === 0 ? (
+                                        <div className="shelf-empty">No books on this shelf yet.</div>
+                                    ) : (
+                                rowBooks.map((book) => (
+                                    <div
+                                    key={book.id}
+                                    title={book.name}
+                                    className="book-spine"
+                                    onClick={() => router.push(`/books/${book.id}`)}
+                                    >
+                                    {book.coverUrl ? (
+                                        <img
+                                        src={book.coverUrl}
+                                        alt={book.name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
+                                        />
+                                    ) : (
+                                        book.name.split(" ").slice(0, 2).join(" ")
+                                    )}
+                                    </div>
+                                ))
                                 )}
+                                </div>
+                            ))}
                             </div>
-                            ))
-                        )}
-                        </div>
+                        );
+                        })()}
 
                         {/* Dynamic count */}
                         <div className="bookshelf-count">{displayBooks.length} books</div>
@@ -373,33 +391,50 @@ const Dashboard: React.FC = () => {
 
                     {/* Recent Readings */}
                     <div className="recent-readings-card">
-                        <div className="recent-readings-title">Recent Readings</div>
-                            <div className="bookshelf-shelf">
-                                {shelves.find((s) => s.name === "Recent Readings") ?.shelfBooks.length === 0 ? (
-                                    <div style={{ color: "#aaa", fontSize: 14, padding: "12px 0" }}>
-                                        No recent readings yet.
-                                    </div>
-                                ) : (
-                                    shelves.find((s) => s.name === "Recent Readings") ?.shelfBooks.map((sb) => {
-                                        const book = sb.book;
-                                        return (
-                                        <div
-                                            key={book.id}
-                                            title={book.name}
-                                            className="book-spine-sm"
-                                            style={{ cursor: "pointer" }}
-                                            onClick={() => router.push(`/books/${book.id}`)}
-                                        >
+                    <div className="recent-readings-title">Recent Readings</div>
+                    {(() => {
+                    const recentBooks = (
+                        shelves.find((s) => s.name === "Recent Readings")?.shelfBooks?.map((sb) => sb.book) ?? []
+                    ).slice(0, RECENT_MAX);
+
+                    const rows: Book[][] = [];
+                    for (let i = 0; i < recentBooks.length; i += 12) {
+                        rows.push(recentBooks.slice(i, i + 12));
+                    }
+                    if (rows.length === 0) rows.push([]); // always at least one plank
+
+                    return (
+                        <div className="bookshelf-rows">
+                        {rows.map((rowBooks, rowIdx) => (
+                            <div key={rowIdx} className="bookshelf-shelf">
+                            {rowBooks.length === 0 ? (
+                                <div className="shelf-empty">No recent readings yet.</div>
+                            ) : (
+                                rowBooks.map((book) => (
+                                <div
+                                    key={book.id}
+                                    title={book.name}
+                                    className="book-spine-sm"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => router.push(`/books/${book.id}`)}
+                                >
                                     {book.coverUrl ? (
-                                        <img
+                                    <img
                                         src={book.coverUrl}
                                         alt={book.name}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
-                                        />
-                                    ) : (book.name.split(" ").slice(0, 2).join(" "))}
-                                    </div>
-                                )}))}
+                                        className="book-cover-img"
+                                    />
+                                    ) : (
+                                    book.name.split(" ").slice(0, 2).join(" ")
+                                    )}
+                                </div>
+                                ))
+                            )}
+                            </div>
+                        ))}
                         </div>
+                    );
+                    })()}
                     </div>
 
                     {/* Bottom Row */}
