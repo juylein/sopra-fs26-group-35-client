@@ -14,6 +14,7 @@ import { Book } from "@/types/book";
 import { ToastContainer } from "react-toastify";
 import {UserStats} from "@/types/leaderboard";
 import {Activities} from "@/types/activities";
+import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -42,6 +43,7 @@ const Dashboard: React.FC = () => {
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
+    const { handleErrorMessage } = useHandleErrorMessage();
 
     // Shelves state
     const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -53,7 +55,7 @@ const Dashboard: React.FC = () => {
     const [latestSessionEmpty, setLatestSessionEmpty] = useState(false);
     const [resumeLoading, setResumeLoading] = useState(false);
     const [leaderboard, setLeaderboard] = useState<UserStats[]>([]);
-    const [activities,setActivites] = useState<Activities[]>([]);
+    const [activities,setActivities] = useState<Activities[]>([]);
     // Compute selected shelf and books to display based on selectedShelfId
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const displayBooks = selectedShelf?.shelfBooks.map(sb => sb.book) ?? [];
@@ -72,9 +74,10 @@ const Dashboard: React.FC = () => {
     // Fetch shelves on component mount
     useEffect(() => {
         const fetchShelves = async () => {
-            if (!userId) return;
+            if (!id) return;
+
             try {
-                const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+                const data = await apiService.get<Shelf[]>(`/users/${id}/library/shelves`);
                 setShelves(data);
 
                 // Always default to "Read" if nothing is saved yet
@@ -134,7 +137,7 @@ const Dashboard: React.FC = () => {
                 const data = await apiService.get<UserStats[]>(`/users/leaderboard`);
                 setLeaderboard(data);
             } catch (error) {
-                console.log(error);
+                handleErrorMessage(error);
             }
         };
     
@@ -146,12 +149,10 @@ const Dashboard: React.FC = () => {
             if (!userId) return;
     
             try {
-                const data = await apiService.get<Activities[]>(
-                    `/users/${userId}/activities`
-                );
-                setActivites(data);
+                const data = await apiService.get<Activities[]>(`/users/${userId}/activities`);
+                setActivities(data);
             } catch (error) {
-                console.log(error);
+                handleErrorMessage(error);
             }
         };
     

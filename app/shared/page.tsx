@@ -9,21 +9,9 @@ import { Button } from "antd";
 import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
+import { Shelf } from "@/types/shelf";
+import { ShelfBook } from "@/types/shelfbook";
 
-// ── Placeholder data (replace with real API calls when backend is ready) ──────
-
-const MY_BOOKS = [
-    { title: "Wuthering Heights", author: "Emily Brontë", color: "#2a2116", page: 244, total: 359 },
-    { title: "Dune", author: "Frank Herbert", color: "#7a5a20", page: 180, total: 412 },
-    { title: "The Great Gatsby", author: "F. Scott Fitzgerald", color: "#3a5a8b", page: 90, total: 180 },
-];
-
-const FRIENDS = [
-    { id: 1, name: "Julie", initial: "J", color: "#8b1a1a", online: true },
-    { id: 2, name: "Fraia", initial: "F", color: "#3a5a8b", online: true },
-    { id: 3, name: "Natalia", initial: "N", color: "#5a5a5a", online: false },
-    { id: 4, name: "Vanessa", initial: "V", color: "#2a7a4a", online: false },
-];
 
 // Simulated participants in an active session (host + friends who joined)
 const ACTIVE_PARTICIPANTS = [
@@ -43,9 +31,11 @@ const SharedReadingSession: React.FC = () => {
 
     // Lobby state
     const [view, setView] = useState<SessionView>("lobby");
-    const [selectedBook, setSelectedBook] = useState<typeof MY_BOOKS[0] | null>(null);
+    const [selectedBook, setSelectedBook] = useState<ShelfBook | null>(null);
     const [selectedFriends, setSelectedFriends] = useState<number[]>([]);
     const [currentPage, setCurrentPage] = useState(0);
+    const [shelves, setShelves] = useState<Shelf[]>([]);
+    const [friends, setFriends] = useState<User[]>([]);
 
     // Timer — shared session means everyone's timer ticks together
     const [seconds, setSeconds] = useState(0);
@@ -85,6 +75,36 @@ const SharedReadingSession: React.FC = () => {
         return () => clearInterval(interval);
     }, [running]);
 
+    useEffect(() => {
+        const fetchShelves = async () => {
+            try {
+                const data = await apiService.get<Shelf[]>(
+                    `/users/${userId}/library/shelves`
+                );
+                setShelves(data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+    
+        if (userId) fetchShelves();
+    }, [userId]);
+
+    useEffect(() => {
+        const fetchFriends = async () => {
+            if (!userId) return;
+    
+            try {
+                const fetchedUser = await apiService.get<User>(`/users/${userId}`);
+                setFriends(fetchedUser.friends ?? []);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+    
+        fetchFriends();
+    }, [userId]);
+
     const formatTime = (s: number) => {
         const h = Math.floor(s / 3600);
         const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
@@ -100,7 +120,7 @@ const SharedReadingSession: React.FC = () => {
 
     const handleStartSession = () => {
         if (!selectedBook || selectedFriends.length === 0) return;
-        setCurrentPage(selectedBook.page);
+        setCurrentPage(selectedBook.pagesRead ?? 0);
         setSeconds(0);
         setRunning(true);
         setView("active");
@@ -124,138 +144,203 @@ const SharedReadingSession: React.FC = () => {
         setSelectedFriends([]);
     };
 
-    const pct = selectedBook ? Math.round((currentPage / selectedBook.total) * 100) : 0;
+    const pct = selectedBook?.book.pages
+    ? Math.round((currentPage / selectedBook.book.pages) * 100)
+    : 0;
 
     if (!isAuthorized) {
         return <ToastContainer position="top-center" />;
     }
 
+    const allBooks = Array.from(
+        new Map(
+            shelves
+                .flatMap((shelf) => shelf.shelfBooks ?? [])
+                .map((sb) => [sb.book.id, sb])
+        ).values()
+    );
+
     return (
-        <div className="dashboard-root">
-            <Sidebar />
+                <div className="dashboard-root">
+                    <Sidebar />
 
-            {/* Top Bar */}
-            <TopBar onLogout={handleLogout} />
+                    {/* Top Bar */}
+                    <TopBar onLogout={handleLogout} />
 
-            <div className="dashboard-main">
-                <div className="dashboard-content">
+                    <div className="dashboard-main">
+                        <div className="dashboard-content">
 
-                    {/* Page Title */}
-                    <div className="bookshelf-card" style={{ paddingBottom: 8 }}>
-                        <div className="bookshelf-title">Shared Reading Session</div>
-                        <div className="bookshelf-sort" style={{ marginTop: 0 }}>
-                            Read at the same time as your friends. Everyone picks their own book.
+                            {/* Page Title */}
+                            <div className="bookshelf-card" style={{ paddingBottom: 8 }}>
+                                <div className="bookshelf-title">Shared Reading Session</div>
+                                <div className="bookshelf-sort" style={{ marginTop: 0 }}>
+                                    Read at the same time as your friends. Everyone picks their own book.
+                                </div>
+                            </div>
+
+                            {/* ── LOBBY ─────────────────────────────────────────────── */}
+                            {view === "lobby" && (
+        <>
+            <div
+            className="dashboard-bottom-row"
+            style={{ alignItems: "flex-start" }}
+            >
+            {/* ───────────── STEP 1 ───────────── */}
+            <div className="bottom-card">
+                <div className="bottom-card-title" style={{ marginBottom: 14 }}>
+                1. Choose your book
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {allBooks.map((shelfBook) => (
+                    <div
+                    key={shelfBook.id}
+                    onClick={() => setSelectedBook(shelfBook)}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                        padding: "12px 16px",
+                        borderRadius: 6,
+                        border:
+                        selectedBook?.id === shelfBook.id
+                            ? "2px solid #185FA5"
+                            : "1px solid #d4c9b0",
+                        background:
+                        selectedBook?.id === shelfBook.id ? "#f0f4ff" : "white",
+                        cursor: "pointer",
+                    }}
+                    >
+                    {/* COVER */}
+                    {shelfBook.book.coverUrl ? (
+                        <img
+                        src={shelfBook.book.coverUrl}
+                        alt={shelfBook.book.name}
+                        style={{
+                            width: 36,
+                            height: 52,
+                            objectFit: "cover",
+                            borderRadius: "2px 4px 4px 2px",
+                            boxShadow: "1px 2px 4px rgba(0,0,0,0.2)",
+                        }}
+                        />
+                    ) : (
+                        <div
+                        style={{
+                            width: 36,
+                            height: 52,
+                            background: "#3a5a8b",
+                            borderRadius: "2px 4px 4px 2px",
+                        }}
+                        />
+                    )}
+
+                    {/* TEXT */}
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700 }}>{shelfBook.book.name}</div>
+                        <div style={{ fontSize: "0.85rem", color: "#8a7d6a" }}>
+                        {shelfBook.book.authors}
                         </div>
                     </div>
 
-                    {/* ── LOBBY ─────────────────────────────────────────────── */}
-                    {view === "lobby" && (
-                        <>
-                            <div className="dashboard-bottom-row" style={{ alignItems: "flex-start" }}>
-
-                                {/* Step 1 — pick your book */}
-                                <div className="bottom-card">
-                                    <div className="bottom-card-title" style={{ marginBottom: 14 }}>
-                                        1. Choose your book
-                                    </div>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                        {MY_BOOKS.map((book, i) => (
-                                            <div
-                                                key={i}
-                                                onClick={() => setSelectedBook(book)}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 12,
-                                                    padding: "10px 14px",
-                                                    borderRadius: 6,
-                                                    border: selectedBook?.title === book.title
-                                                        ? "2px solid #185FA5"
-                                                        : "1px solid #d4c9b0",
-                                                    background: selectedBook?.title === book.title ? "#f0f4ff" : "white",
-                                                    cursor: "pointer",
-                                                }}
-                                            >
-                                                <div style={{
-                                                    width: 32,
-                                                    height: 46,
-                                                    background: book.color,
-                                                    borderRadius: "2px 4px 4px 2px",
-                                                    flexShrink: 0,
-                                                    boxShadow: "1px 2px 4px rgba(0,0,0,0.2)",
-                                                }} />
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1a1a1a" }}>{book.title}</div>
-                                                    <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>{book.author} · pg {book.page}/{book.total}</div>
-                                                </div>
-                                                {selectedBook?.title === book.title && (
-                                                    <div style={{ color: "#185FA5", fontWeight: 700, fontSize: "0.8rem" }}>✓</div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Step 2 — invite friends */}
-                                <div className="bottom-card">
-                                    <div className="bottom-card-title" style={{ marginBottom: 14 }}>
-                                        2. Invite friends
-                                    </div>
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                        {FRIENDS.map((f) => (
-                                            <div
-                                                key={f.id}
-                                                onClick={() => toggleFriend(f.id)}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 12,
-                                                    padding: "10px 14px",
-                                                    borderRadius: 6,
-                                                    border: selectedFriends.includes(f.id)
-                                                        ? "2px solid #3a6b2a"
-                                                        : "1px solid #d4c9b0",
-                                                    background: selectedFriends.includes(f.id) ? "#f0fff4" : "white",
-                                                    cursor: "pointer",
-                                                    opacity: f.online ? 1 : 0.6,
-                                                }}
-                                            >
-                                                <div className="friend-avatar" style={{ background: f.color, flexShrink: 0 }}>
-                                                    {f.initial}
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1a1a1a" }}>{f.name}</div>
-                                                    <div style={{ fontSize: "0.8rem", color: f.online ? "#3a6b2a" : "#8a7d6a" }}>
-                                                        {f.online ? "● Online" : "○ Offline"}
-                                                    </div>
-                                                </div>
-                                                {selectedFriends.includes(f.id) && (
-                                                    <div style={{ color: "#3a6b2a", fontWeight: 700, fontSize: "0.85rem" }}>✓ Invited</div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Start button */}
-                            <div style={{ textAlign: "center", marginTop: 4 }}>
-                                <Button
-                                    className="bookshelf-session-btn-resume"
-                                    onClick={handleStartSession}
-                                    disabled={!selectedBook || selectedFriends.length === 0}
-                                    style={{ minWidth: 240, height: 44, fontSize: "1rem" }}
-                                >
-                                    Start Shared Session
-                                </Button>
-                                {(!selectedBook || selectedFriends.length === 0) && (
-                                    <div style={{ color: "#8a7d6a", fontSize: "0.8rem", marginTop: 8 }}>
-                                        Select a book and at least one friend to continue
-                                    </div>
-                                )}
-                            </div>
-                        </>
+                    {selectedBook?.id === shelfBook.id && (
+                        <div style={{ color: "#185FA5", fontWeight: 700 }}>
+                        ✓
+                        </div>
                     )}
+                    </div>
+                ))}
+                </div>
+            </div>
+
+            {/* ───────────── STEP 2 ───────────── */}
+            <div className="bottom-card">
+                <div className="bottom-card-title" style={{ marginBottom: 14 }}>
+                2. Invite friends
+                </div>
+
+                {/* IMPORTANT: this div MUST be closed before button */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {friends.map((f) => {
+                    const isSelected = selectedFriends.includes(f.id);
+
+                    return (
+                    <div
+                        key={f.id}
+                        onClick={() => toggleFriend(f.id)}
+                        style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        padding: "10px 14px",
+                        borderRadius: 6,
+                        border: isSelected
+                            ? "2px solid #3a6b2a"
+                            : "1px solid #d4c9b0",
+                        background: isSelected ? "#f0fff4" : "white",
+                        cursor: "pointer",
+                        }}
+                    >
+                        <div
+                        className="friend-avatar"
+                        style={{ background: "#2e7d32" }}
+                        >
+                        {f.username?.substring(0, 2).toUpperCase()}
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700 }}>
+                            {f.name ?? f.username}
+                        </div>
+
+                        <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>
+                            @{f.username}
+                        </div>
+
+                        <div
+                            style={{
+                            fontSize: "0.75rem",
+                            color:
+                                f.status === "ONLINE"
+                                ? "#3a6b2a"
+                                : "#8a7d6a",
+                            }}
+                        >
+                            {f.status === "ONLINE" ? "● Online" : "○ Offline"}
+                        </div>
+                        </div>
+
+                        {isSelected && (
+                        <div style={{ color: "#3a6b2a", fontWeight: 700 }}>
+                            ✓ Invited
+                        </div>
+                        )}
+                    </div>
+                    );
+                })}
+                </div>
+            </div>
+            </div>
+
+            {/* ───────────── START BUTTON (OUTSIDE ROW) ───────────── */}
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+            <Button
+                className="bookshelf-session-btn-resume"
+                onClick={handleStartSession}
+                disabled={!selectedBook || selectedFriends.length === 0}
+                style={{ minWidth: 240, height: 44 }}
+            >
+                Start Shared Session
+            </Button>
+
+            {(!selectedBook || selectedFriends.length === 0) && (
+                <div style={{ color: "#8a7d6a", fontSize: "0.8rem", marginTop: 8 }}>
+                Select a book and at least one friend
+                </div>
+            )}
+            </div>
+        </>
+        )}
 
                     {/* ── ACTIVE SESSION ────────────────────────────────────── */}
                     {view === "active" && selectedBook && (
@@ -263,13 +348,23 @@ const SharedReadingSession: React.FC = () => {
                             {/* Your session banner */}
                             <div className="bookshelf-card">
                                 <div className="bookshelf-session">
-                                    <div className="bookshelf-session-cover" style={{ background: selectedBook.color }} />
+                                <div className="bookshelf-session-cover">
+                                    {selectedBook.book.coverUrl ? (
+                                        <img
+                                            src={selectedBook.book.coverUrl}
+                                            alt={selectedBook.book.name}
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        />
+                                    ) : (
+                                        <div style={{ width: "100%", height: "100%", background: "#3a5a8b" }} />
+                                    )}
+                                </div>
                                     <div className="bookshelf-session-info">
                                         <div className="bookshelf-session-title">
-                                            {selectedBook.title} – {selectedBook.author}
+                                            {selectedBook.book.name} – {selectedBook.book.authors}
                                         </div>
                                         <div className="bookshelf-session-subtitle">
-                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.total}
+                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.book.pages}
                                         </div>
                                         <div className="bookshelf-progress-bar">
                                             <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
@@ -306,10 +401,10 @@ const SharedReadingSession: React.FC = () => {
                                                 <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#1a1a1a" }}>
                                                     {user?.name ?? "You"} <span style={{ color: "#3a6b2a", fontWeight: 400, fontSize: "0.8rem" }}>(you)</span>
                                                 </div>
-                                                <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>{selectedBook.title}</div>
+                                                <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>{selectedBook.book.name}</div>
                                             </div>
                                             <div style={{ marginLeft: "auto", fontWeight: 700, fontSize: "0.85rem", color: "#1a1a1a" }}>
-                                                pg {currentPage}/{selectedBook.total}
+                                                pg {currentPage}/{selectedBook.book.pages}
                                             </div>
                                         </div>
                                         <div className="bookshelf-progress-bar">
@@ -361,16 +456,16 @@ const SharedReadingSession: React.FC = () => {
                                             {currentPage}
                                         </div>
                                         <Button
-                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.total, p + 1))}
+                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.book.pages ?? 0, p + 1))}
                                             style={{ fontWeight: 700, fontSize: "1.1rem" }}
                                         >+</Button>
-                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.total}</span>
+                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.book.name}</span>
                                     </div>
                                     <div className="bookshelf-progress-bar" style={{ marginBottom: 6 }}>
                                         <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
                                     </div>
                                     <div className="bookshelf-progress-label">
-                                        {selectedBook.total - currentPage} pages remaining
+                                        {selectedBook.book.pages ?? 0 - currentPage} pages remaining
                                     </div>
 
                                     {/* Session timer display */}
