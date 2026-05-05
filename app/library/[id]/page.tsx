@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useSearchParams } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/topbar";
