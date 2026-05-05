@@ -3,9 +3,10 @@ import { App as AntdApp, ConfigProvider, theme } from "antd";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@/styles/globals.css";
 import { Philosopher } from "next/font/google";
+import "@/styles/dashboard.css";
 
 export const metadata: Metadata = {
-  title: "Student XX-XXX-XXX",
+  title: "bookshelf",
   description: "Book universe",
 };
 
