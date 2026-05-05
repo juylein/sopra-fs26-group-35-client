@@ -61,6 +61,24 @@ const Dashboard: React.FC = () => {
         .flatMap((s) => s.shelfBooks ?? [])
         .reduce((sum, sb) => sum + (sb.pagesRead ?? 0), 0);
 
+    // Friends
+    const [friendsCount, setFriendsCount] = useState(0);
+
+    useEffect(() => {
+        const fetchFriends = async () => {
+            if (!userId) return;
+
+            try {
+                const friends = await apiService.get<User[]>(`/users/${userId}/friends`);
+                setFriendsCount(friends.length);
+            } catch (error) {
+                console.error("Failed to fetch friends:", error);
+            }
+        };
+
+        fetchFriends();
+    }, [apiService, userId]);
+
     // Fetch shelves on component mount
     useEffect(() => {
         const fetchShelves = async () => {
@@ -247,7 +265,7 @@ const Dashboard: React.FC = () => {
                                 [booksRead.toString(), "books read"],
                                 [pagesRead.toLocaleString(), "pages read"],
                                 ["32", "points"],
-                                ["4", "friends"],
+                                [friendsCount.toString(), "friends"],
                             ].map(([val, label], i) => (
                                 <div key={i} className="profile-stat-cell">
                                     {val}
