@@ -204,13 +204,19 @@ const Discover: React.FC = () => {
             });
             setAddedBooks((prev) => new Set(prev).add(`${book.id}-${shelfId}`));
             messageApi.success(`"${info.title}" added to shelf!`);
-        } catch (error) {
-            console.error("Failed to add book to shelf:", error);
-            messageApi.error("Failed to add book. Please try again.");
-        } finally {
-            setAddingToShelf(null);
-        }
-    };
+            } catch (error: any) {            
+                if (error.response?.status === 409 || error.message?.includes("already")) {
+                    messageApi.success(`"${info.title}" is already in the shelf!`);
+                    return;
+                }
+
+                console.error("Failed to add book to shelf:", error);
+                messageApi.error("Failed to add book. Please try again.");
+
+            } finally {
+                setAddingToShelf(null);
+            }
+        };
 
     const handleIsbnLookup = async () => {
         if (!isbnInput.trim()) return;
