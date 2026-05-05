@@ -407,15 +407,15 @@ const Dashboard: React.FC = () => {
                                                     <div
                                                         key={book.id}
                                                         title={book.name}
-                                                        className="book-spine-sm"
+                                                        className="book-spine"
                                                         style={{ cursor: "pointer" }}
                                                         onClick={() => router.push(`/books/${book.id}`)}
                                                     >
                                                         {book.coverUrl ? (
                                                             <img
-                                                                src={book.coverUrl}
-                                                                alt={book.name}
-                                                                className="book-cover-img"
+                                                            src={book.coverUrl}
+                                                            alt={book.name}
+                                                            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
                                                             />
                                                         ) : (
                                                             book.name.split(" ").slice(0, 2).join(" ")

@@ -265,7 +265,6 @@ const Library: React.FC = () => {
                             <div
                               title={shelfBook.book.name}
                               className="book"
-                              style={{ background: "#8d8f91", cursor: "pointer" }}
                               onClick={() => router.push(`/books/${shelfBook.book.id}`)}
                             >
                               {shelfBook.book.coverUrl ? (

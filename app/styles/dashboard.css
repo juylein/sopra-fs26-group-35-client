@@ -312,7 +312,7 @@
 }
 
 .book-spine {
-    width: 52px;
+    width: 54px;
     height: 78px;
     border-radius: 3px;
     cursor: pointer;
@@ -321,9 +321,8 @@
     justify-content: center;
     font-size: 7px;
     color: #fff;
-    background: #8d8f91;
+    background: #e8e0cc;
     text-align: center;
-    padding: 0 2px 4px;
     transition: transform 0.15s;
     position: relative;       
     overflow: hidden; 
@@ -331,6 +330,26 @@
 
 .book-spine:hover {
     transform: translateY(-4px);
+}
+
+.book-spine-sm {
+    width: 54px;
+    height: 78px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 7px;
+    color: #fff;
+    text-align: center;
+    padding: 0 2px 3px;
+    transition: transform 0.15s;
+}
+
+.book-spine-sm:hover {
+    transform: translateY(-3px);
 }
 
 /* ─── Recent Readings ───────────────────────────── */
@@ -352,26 +371,6 @@
     gap: 8px;
     overflow-x: auto;
     padding-bottom: 8px;
-}
-
-.book-spine-sm {
-    width: 54px;
-    height: 78px;
-    border-radius: 3px;
-    flex-shrink: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    font-size: 7px;
-    color: #fff;
-    text-align: center;
-    padding: 0 2px 3px;
-    transition: transform 0.15s;
-}
-
-.book-spine-sm:hover {
-    transform: translateY(-3px);
 }
 
 /* ─── Bottom Row ────────────────────────────────── */
