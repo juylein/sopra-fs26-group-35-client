@@ -136,6 +136,7 @@ reason).
 
 ---
 
-## Contributions Week 6 - [Begin Date] to [End Date]
+## Contributions Week 6 - [30.04.2026] to [06.05.2026]
 
-_Continue with the same table format as above._
+| **@missbo-cyber**                      | 05.06.2026   |https://github.com/juylein/sopra-fs26-group-35-server/commit/5e55fc182ef875c9e12662e019f2599476c25d40 | Combined our work of week 5, resolved all the merge conflicts. Added View profile of the friend functionality. | This contribution is relevant because it is directly related to our user story 11 that tells that as a logged-in-user, I want friend navigation so I can manage my frriends connections. 
+| **@missbo-cyber**                      | 05.06.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/112 | Leaderboard on the dashboard is now conected to the backend.  | It is relevant for our app because a user should be able to see how many points he gained in the quizzes and thanks to reading sessions and compare themselves with others. 
