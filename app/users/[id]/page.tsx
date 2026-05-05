@@ -12,6 +12,8 @@ import "@/styles/dashboard.css"
 import { Shelf } from "@/types/shelf";
 import { Book } from "@/types/book";
 import { ToastContainer } from "react-toastify";
+import {UserStats} from "@/types/leaderboard";
+import {Activities} from "@/types/activities";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -26,6 +28,7 @@ const LB = [
     { rank: 3, name: "Fraia", points: 53, color: "#3a5a8b" },
     { rank: 4, name: "Natalia", points: 52, color: "#5a5a5a" },
 ];
+
 
 const BOOKS_PER_ROW = 18;
 const SHELF_MAX = BOOKS_PER_ROW * 3;
@@ -49,7 +52,8 @@ const Dashboard: React.FC = () => {
     const [latestSession, setLatestSession] = useState<{ id: number; bookId: string; bookTitle: string; coverUrl: string | null; } | null>(null);
     const [latestSessionEmpty, setLatestSessionEmpty] = useState(false);
     const [resumeLoading, setResumeLoading] = useState(false);
-
+    const [leaderboard, setLeaderboard] = useState<UserStats[]>([]);
+    const [activities,setActivites] = useState<Activities[]>([]);
     // Compute selected shelf and books to display based on selectedShelfId
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const displayBooks = selectedShelf?.shelfBooks.map(sb => sb.book) ?? [];
@@ -60,6 +64,10 @@ const Dashboard: React.FC = () => {
     const pagesRead = shelves
         .flatMap((s) => s.shelfBooks ?? [])
         .reduce((sum, sb) => sum + (sb.pagesRead ?? 0), 0);
+
+        const currentUserStats = leaderboard.find(
+            (u) => u.id=== Number(id)
+        );
 
     // Fetch shelves on component mount
     useEffect(() => {
@@ -120,6 +128,36 @@ const Dashboard: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        const getLeaderboard = async () => {
+            try {
+                const data = await apiService.get<UserStats[]>(`/users/leaderboard`);
+                setLeaderboard(data);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+    
+        getLeaderboard();
+    }, [apiService]);
+
+    useEffect(() => {
+        const fetchActivities = async () => {
+            if (!userId) return;
+    
+            try {
+                const data = await apiService.get<Activities[]>(
+                    `/users/${userId}/activities`
+                );
+                setActivites(data);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+    
+        fetchActivities();
+    }, [apiService, userId]);
+    
     // Handler for shelf change
     const handleShelfSelect = (shelf: Shelf) => {
         setSelectedShelfId(shelf.id);
@@ -246,8 +284,8 @@ const Dashboard: React.FC = () => {
                             {[
                                 [booksRead.toString(), "books read"],
                                 [pagesRead.toLocaleString(), "pages read"],
-                                ["32", "points"],
-                                ["4", "friends"],
+                                [currentUserStats?.totalPoints, "points"],
+                                [currentUserStats?.numFriends, "friends"],
                             ].map(([val, label], i) => (
                                 <div key={i} className="profile-stat-cell">
                                     {val}
@@ -453,27 +491,49 @@ const Dashboard: React.FC = () => {
 
                         {/* Leaderboard */}
                         <div className="bottom-card">
-                            <div className="bottom-card-title">Leaderboard</div>
-                            <div className="lb-list">
-                                {LB.map((r, i) => (
-                                    <div key={i} className="lb-row">
-                                        <div className="lb-rank">{r.rank}</div>
-                                        <div className="lb-avatar" style={{ background: r.color }}>{r.name[0]}</div>
-                                        <div className="lb-name">{r.name}</div>
-                                        <div className="lb-points">{r.points} points</div>
+                        <div className="bottom-card-title">Leaderboard</div>
+
+                        <div className="lb-list">
+                            {leaderboard.length === 0 ? (
+                                <div className="shelf-empty">No leaderboard data yet.</div>
+                            ) : (
+                                leaderboard.map((r, i) => (
+                                    <div key={r.id ?? i} className="lb-row">
+                                        <div className="lb-rank">{i + 1}</div>
+
+                                        <div
+                                            className="lb-avatar"
+                                            style={{ background: "#3a5a8b" }}
+                                        >
+                                            {r.username[0].toUpperCase()}
+                                        </div>
+
+                                        <div className="lb-name">{r.username}</div>
+
+                                        <div className="lb-points">
+                                            {r.totalPoints} points
+                                        </div>
                                     </div>
-                                ))}
-                                <div className="lb-dots">···</div>
-                                <div className="lb-row-self">
-                                    <div className="lb-rank">8</div>
-                                    <div className="lb-avatar" style={{ background: "#7a6e5e" }}>
-                                        {user?.name?.[0]?.toUpperCase() ?? "U"}
-                                    </div>
-                                    <div className="lb-name" style={{ fontWeight: 700 }}>{user?.name ?? "User"}</div>
-                                    <div className="lb-points">32 points</div>
+                                ))
+                            )}
+
+                            <div className="lb-dots">···</div>
+
+                            <div className="lb-row-self">
+                                <div className="lb-rank">–</div>
+
+                                <div className="lb-avatar" style={{ background: "#7a6e5e" }}>
+                                    {user?.name?.[0]?.toUpperCase() ?? "U"}
                                 </div>
+
+                                <div className="lb-name" style={{ fontWeight: 700 }}>
+                                    {user?.name ?? "User"}
+                                </div>
+
+                                <div className="lb-points">–</div>
                             </div>
                         </div>
+                    </div>
 
                     </div>
                 </div>

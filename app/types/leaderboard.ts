@@ -1,10 +1,8 @@
-import { User } from "./user";
-
-export interface Leaderboard {
+export interface UserStats {
     id: number;
-    user: User;
-    readingPoints: number;
-    quizPoints: number;
+    username: string;
     totalPoints: number;
-
+    numFriends: number;
+    pagesRead: number;
+    booksRead:number;
 }
