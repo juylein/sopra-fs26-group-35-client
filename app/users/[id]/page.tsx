@@ -391,8 +391,8 @@ const Dashboard: React.FC = () => {
                             ).slice(0, RECENT_MAX);
 
                             const rows: Book[][] = [];
-                            for (let i = 0; i < recentBooks.length; i += 12) {
-                                rows.push(recentBooks.slice(i, i + 12));
+                            for (let i = 0; i < recentBooks.length; i += BOOKS_PER_ROW) {
+                                rows.push(recentBooks.slice(i, i + BOOKS_PER_ROW));
                             }
                             if (rows.length === 0) rows.push([]); // always at least one plank
 
