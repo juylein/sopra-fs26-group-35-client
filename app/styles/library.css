@@ -253,3 +253,51 @@
 .book:hover {
     transform: translateY(-3px);
 }
+
+/* ── Pagination ─────────────────────────────────────── */
+.shelf-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-btn {
+  background: none;
+  border: 1px solid #e0d8cc;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #7a6e5e;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #e0d8cc;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid #e0d8cc;
+  background: none;
+  font-size: 11px;
+  font-family: inherit;
+  color: #7a6e5e;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pagination-dot.active {
+  background: #3a5a8b;
+  border-color: #3a5a8b;
+  color: #fff;
+  font-weight: 700;
+}

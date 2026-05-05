@@ -14,7 +14,7 @@ import { Shelf } from "@/types/shelf";
 
 // How many books fit per row — adjust to match actual .book width + gap
 const BOOKS_PER_ROW = 18;
-const MAX_ROWS = 2;
+const MAX_ROWS = 1;
 const MAX_BOOKS_DISPLAYED = BOOKS_PER_ROW * MAX_ROWS;
 
 const Library: React.FC = () => {
