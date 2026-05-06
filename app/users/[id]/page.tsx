@@ -49,7 +49,13 @@ const Dashboard: React.FC = () => {
     const { value: savedShelfId, set: saveShelfId } = useLocalStorage<number | null>("dashboard_shelf_id", null);
     const [selectedShelfId, setSelectedShelfId] = useState<number | null>(savedShelfId);
 
-    const [latestSession, setLatestSession] = useState<{ id: number; bookId: string; bookTitle: string; coverUrl: string | null; } | null>(null);
+    const [latestSession, setLatestSession] = useState<{
+        id: number;
+        bookTitle: string;
+        coverUrl: string | null;
+        shelfBookId: number;
+        pagesRead: number | null;
+    } | null>(null);
     const [latestSessionEmpty, setLatestSessionEmpty] = useState(false);
     const [resumeLoading, setResumeLoading] = useState(false);
     const [leaderboard, setLeaderboard] = useState<UserStats[]>([]);
@@ -92,7 +98,7 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         const fetchLatest = async () => {
             try {
-                const data = await apiService.get<{ id: number; bookId: string; bookTitle: string; coverUrl: string | null }>(
+                const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null }>(
                     `/users/${userId}/sessions/latest`
                 );
                 setLatestSession(data);
@@ -108,18 +114,13 @@ const Dashboard: React.FC = () => {
         setResumeLoading(true);
         try {
             const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
-            const shelfBook = allShelfBooks.find((sb) => String(sb.book.id) === String(latestSession.bookId));
+            const shelfBook = allShelfBooks.find((sb) => sb.id === latestSession.shelfBookId);
 
             if (!shelfBook) {
                 alert("Could not find this book in your shelves.");
                 return;
             }
 
-            const newSession = await apiService.post<{ id: number }>(
-                `/users/${userId}/sessions`,
-                [{ userId, shelfBookId: shelfBook.id }]
-            );
-            await apiService.put(`/users/${userId}/sessions/${newSession.id}/started`, {});
             router.push(`/session?shelfBookId=${shelfBook.id}`);
         } catch {
             alert("Failed to start session.");
@@ -322,14 +323,14 @@ const Dashboard: React.FC = () => {
                                         <div className="bookshelf-session-title">{latestSession.bookTitle}</div>
                                         {(() => {
                                             const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
-                                            const shelfBook = allShelfBooks.find((sb) => String(sb.book.id) === String(latestSession.bookId));
+                                            const shelfBook = allShelfBooks.find((sb) => sb.id === latestSession.shelfBookId);
                                             const pct = shelfBook?.book.pages
                                                 ? Math.round(((shelfBook.pagesRead ?? 0) / shelfBook.book.pages) * 100)
                                                 : 0;
                                             return (
                                                 <>
                                                     <div className="bookshelf-session-subtitle">
-                                                        Page {shelfBook?.pagesRead ?? 0} of {shelfBook?.book.pages ?? "?"}
+                                                        Page {latestSession.pagesRead ?? 0} of {shelfBook?.book.pages ?? "?"}
                                                     </div>
                                                     <div className="bookshelf-progress-bar">
                                                         <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />

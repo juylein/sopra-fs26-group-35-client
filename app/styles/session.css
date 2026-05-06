@@ -1,0 +1,159 @@
+.session-header-card {
+    padding-bottom: 8px;
+}
+
+.session-subtitle {
+    margin-top: 0;
+}
+
+.session-picker-title {
+    margin-bottom: 16px;
+}
+
+.session-book-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.session-book-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid #d4c9b0;
+    background: white;
+    cursor: pointer;
+}
+
+.session-book-row.selected {
+    border: 2px solid #185FA5;
+    background: #f0f4ff;
+}
+
+.session-book-cover {
+    width: 36px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 2px 4px 4px 2px;
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.session-book-cover-placeholder {
+    width: 36px;
+    height: 52px;
+    background: #3a5a8b;
+    border-radius: 2px 4px 4px 2px;
+    flex-shrink: 0;
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.session-book-info {
+    flex: 1;
+}
+
+.session-book-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1a1a1a;
+}
+
+.session-book-author {
+    font-size: 0.85rem;
+    color: #8a7d6a;
+}
+
+.session-book-page {
+    font-size: 0.8rem;
+    color: #8a7d6a;
+    margin-top: 4px;
+}
+
+.session-book-selected-badge {
+    color: #185FA5;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.session-start-btn {
+    width: 100%;
+    height: 44px;
+    font-size: 1rem;
+}
+
+.session-active-cover {
+    width: 60px;
+    height: 90px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #e8e0cc;
+    flex-shrink: 0;
+}
+
+.session-active-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.session-active-cover-empty {
+    font-size: 10px;
+    text-align: center;
+    padding-top: 30px;
+    color: #8a7d6a;
+}
+
+.session-stats-row {
+    align-items: flex-start;
+}
+
+.session-page-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.session-page-btn {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.session-page-display {
+    border: 1px solid #d4c9b0;
+    border-radius: 6px;
+    padding: 6px 20px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: white;
+    min-width: 70px;
+    text-align: center;
+}
+
+.session-page-total {
+    color: #8a7d6a;
+    font-size: 0.9rem;
+}
+
+.session-progress-bar {
+    margin-bottom: 6px;
+}
+
+.session-stats-grid {
+    margin-top: 16px;
+    grid-template-columns: 1fr 1fr;
+}
+
+.session-finish-row {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.session-finish-btn {
+    min-width: 200px;
+    height: 44px;
+    font-size: 1rem;
+}

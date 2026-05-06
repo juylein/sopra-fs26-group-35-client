@@ -12,29 +12,27 @@ import { SessionGetDTO } from "@/types/session";
 import { Shelf } from "@/types/shelf";
 import { ShelfBook } from "@/types/shelfbook";
 import { useSearchParams } from "next/navigation";
+import "@/styles/session.css";
+import "@/styles/dashboard.css";
 
 const ReadingSessionComponent = () => {
     const router = useRouter();
     const apiService = useApi();
     const searchParams = useSearchParams();
-    const autoShelfBookId = searchParams.get("shelfId");
+    const autoShelfBookId = searchParams.get("shelfBookId");
+    const autoStarted = React.useRef(false);
 
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
 
-    // Book selection
     const [selectedBook, setSelectedBook] = useState<ShelfBook | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(0);
-    const [session, setSession] = useState<SessionGetDTO | null>(null)
+    const [session, setSession] = useState<SessionGetDTO | null>(null);
     const [shelves, setShelves] = useState<Shelf[]>([]);
     const [startPage, setStartPage] = useState<number>(0);
-
-    // Timer
     const [seconds, setSeconds] = useState(0);
     const [running, setRunning] = useState(false);
-
     const [isAuthorized, setIsAuthorized] = useState(false);
-
 
     const handleLogout = async (): Promise<void> => {
         try {
@@ -58,32 +56,29 @@ const ReadingSessionComponent = () => {
             return;
         }
         setIsAuthorized(true);
-
-        if (session)
-        {
-            return;
-        }
-
-        const fetchShelves = async () => {
-          try {
-            const data = await apiService.get<Shelf[]>(
-              `/users/${userId}/library/shelves`
-            );
-            setShelves(data);
-          } catch (err) {
-            console.error(err);
-          }
-        };
-      
-        if (userId) fetchShelves();
-      }, [userId, session, apiService, router]);
+    }, [router]);
 
     useEffect(() => {
-        if (!autoShelfBookId || shelves.length === 0 || session) return;
+        if (!userId || session) return;
+        const fetchShelves = async () => {
+            try {
+                const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+                setShelves(data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchShelves();
+    }, [userId, apiService]);
+
+    useEffect(() => {
+        if (!autoShelfBookId || shelves.length === 0 || session || autoStarted.current) return;
 
         const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
         const shelfBook = allShelfBooks.find((sb) => String(sb.id) === autoShelfBookId);
         if (!shelfBook) return;
+
+        autoStarted.current = true;
 
         const autoStart = async () => {
             try {
@@ -104,9 +99,8 @@ const ReadingSessionComponent = () => {
         };
 
         autoStart();
-    }, [searchParams, autoShelfBookId, shelves, session, apiService, userId]);
+    }, [autoShelfBookId, shelves, session, apiService, userId]);
 
-    // Timer tick
     useEffect(() => {
         if (!running) return;
         const interval = setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -121,30 +115,19 @@ const ReadingSessionComponent = () => {
     };
 
     const handleStartSession = async () => {
-        if (!selectedBook) {
-            return
-        };
-
+        if (!selectedBook) return;
         try {
-            const session = await apiService.post<SessionGetDTO>(
+            const newSession = await apiService.post<SessionGetDTO>(
                 `/users/${userId}/sessions`,
-                [
-                  {
-                    userId: userId,
-                    shelfBookId: selectedBook.id
-                  }
-                ]
-              );
-
-              await apiService.put<SessionGetDTO>(`/users/${userId}/sessions/${session.id}/started`, {});
-
+                [{ userId, shelfBookId: selectedBook.id }]
+            );
+            await apiService.put<SessionGetDTO>(`/users/${userId}/sessions/${newSession.id}/started`, {});
             setCurrentPage(selectedBook.pagesRead ?? 0);
             setStartPage(selectedBook.pagesRead ?? 0);
             setSeconds(0);
             setRunning(true);
-            setSession(session);
-        }
-        catch {
+            setSession(newSession);
+        } catch {
             toast.error("Failed creating session");
         }
     };
@@ -152,8 +135,7 @@ const ReadingSessionComponent = () => {
     const handleFinishSession = async () => {
         setRunning(false);
 
-        if (!session || !selectedBook)
-        {
+        if (!session || !selectedBook) {
             toast.error("Failed ending session for the selected book.");
             return;
         }
@@ -161,175 +143,114 @@ const ReadingSessionComponent = () => {
         try {
             await apiService.put<SessionGetDTO>(`/users/${userId}/sessions/${session.id}/ended`, {});
             await apiService.put(`/users/${userId}/sessions/${session.id}/left`, {
-                shelfBookId: selectedBook!.id,
-                pagesRead: currentPage
-            });
-            
-            toast.success(`Session logged! You read for ${formatTime(seconds)}.`, {
-                className: "session-toast", 
-                progressClassName: "session-toast-progress",
-                onClose: () => router.push("/session"),
+                shelfBookId: selectedBook.id,
+                pagesRead: currentPage,
             });
 
             setSeconds(0);
             setSelectedBook(null);
             setSession(null);
-        
+
+            toast.success(`Session logged! You read for ${formatTime(seconds)}.`, {
+                className: "session-toast",
+                progressClassName: "session-toast-progress",
+            });
+
+            setTimeout(() => router.push("/session"), 1500);
         } catch {
             toast.error("Failed ending session");
         }
     };
 
-    const pct = selectedBook?.book.pages ? Math.round((currentPage / selectedBook.book.pages) * 100) : 0;
+    const pct = selectedBook?.book.pages
+        ? Math.round((currentPage / selectedBook.book.pages) * 100)
+        : 0;
+
     const allBooks = Array.from(
         new Map(
-          shelves
-            .flatMap((shelf) => shelf.shelfBooks ?? [])
-            .map((sb) => [sb.book.id, sb]) 
+            shelves
+                .flatMap((shelf) => shelf.shelfBooks ?? [])
+                .map((sb) => [sb.book.id, sb])
         ).values()
-      );
+    );
 
-    if (!isAuthorized) {
-        return <ToastContainer position="top-center" />;
-    }
+    if (!isAuthorized) return <ToastContainer position="top-center" />;
 
     return (
         <div className="dashboard-root">
             <Sidebar />
-
-            {/* Top Bar */}
             <TopBar onLogout={handleLogout} />
 
             <div className="dashboard-main">
                 <div className="dashboard-content">
 
-                    {/* Page Title */}
-                    <div className="bookshelf-card" style={{ paddingBottom: 8 }}>
+                    <div className="bookshelf-card session-header-card">
                         <div className="bookshelf-title">Reading Session</div>
-                        <div className="bookshelf-sort" style={{ marginTop: 0 }}>
-                            Track your reading time and progress for today.
-                        </div>
+                        <div className="session-subtitle">Track your reading time and progress for today.</div>
                     </div>
 
-                    {/* Book Picker — shown before session starts */}
                     {!session && (
                         <div className="db-card">
-                            <div className="bottom-card-title" style={{ marginBottom: 16 }}>Choose a book to read</div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                            <div className="bottom-card-title session-picker-title">Choose a book to read</div>
+                            <div className="session-book-list">
                                 {allBooks.map((shelfBook) => (
                                     <div
                                         key={shelfBook.id}
                                         onClick={() => setSelectedBook(shelfBook)}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 14,
-                                            padding: "12px 16px",
-                                            borderRadius: 6,
-                                            border: selectedBook?.id === shelfBook.id
-                                                ? "2px solid #185FA5"
-                                                : "1px solid #d4c9b0",
-                                            background: selectedBook?.id === shelfBook.id ? "#f0f4ff" : "white",
-                                            cursor: "pointer",
-                                        }}
-                                        
+                                        className={`session-book-row ${selectedBook?.id === shelfBook.id ? "selected" : ""}`}
                                     >
-                                        {/* Spine */}
-                                    {shelfBook.book.coverUrl ? (
-                                        <img
-                                            src={shelfBook.book.coverUrl}
-                                            alt={shelfBook.book.name}
-                                            style={{
-                                                width: 36,
-                                                height: 52,
-                                                objectFit: "cover",
-                                                borderRadius: "2px 4px 4px 2px",
-                                                boxShadow: "1px 2px 4px rgba(0,0,0,0.2)",
-                                                flexShrink: 0,
-                                            }}
-                                        />
-                                    ) : (
-                                        <div
-                                            style={{
-                                                width: 36,
-                                                height: 52,
-                                                background: "#3a5a8b",
-                                                borderRadius: "2px 4px 4px 2px",
-                                                flexShrink: 0,
-                                                boxShadow: "1px 2px 4px rgba(0,0,0,0.2)",
-                                            }}
+                                        {shelfBook.book.coverUrl ? (
+                                            <img
+                                                src={shelfBook.book.coverUrl}
+                                                alt={shelfBook.book.name}
+                                                className="session-book-cover"
                                             />
+                                        ) : (
+                                            <div className="session-book-cover-placeholder" />
                                         )}
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, fontSize: "1rem", color: "#1a1a1a" }}>{shelfBook.book.name}</div>
-                                            <div style={{ fontSize: "0.85rem", color: "#8a7d6a" }}>{shelfBook.book.authors}</div>
-                                            <div style={{ fontSize: "0.8rem", color: "#8a7d6a", marginTop: 4 }}>
-                                            Page {shelfBook.pagesRead ?? 0} of {shelfBook.book.pages ?? "?"} 
+                                        <div className="session-book-info">
+                                            <div className="session-book-name">{shelfBook.book.name}</div>
+                                            <div className="session-book-author">{shelfBook.book.authors}</div>
+                                            <div className="session-book-page">
+                                                Page {shelfBook.pagesRead ?? 0} of {shelfBook.book.pages ?? "?"}
                                             </div>
                                         </div>
                                         {selectedBook?.id === shelfBook.id && (
-                                            <div style={{ color: "#185FA5", fontWeight: 700, fontSize: "0.85rem" }}>Selected ✓</div>
+                                            <div className="session-book-selected-badge">Selected ✓</div>
                                         )}
                                     </div>
                                 ))}
                             </div>
                             <Button
-                                className="bookshelf-session-btn-resume"
+                                className="bookshelf-session-btn-resume session-start-btn"
                                 onClick={handleStartSession}
                                 disabled={!selectedBook}
-                                style={{ width: "100%", height: 44, fontSize: "1rem" }}
                             >
                                 Start Session
                             </Button>
                         </div>
                     )}
 
-                    {/* Active Session */}
                     {session && selectedBook && (
-                            <>
-                                {/* Timer Card */}
-                                <div className="bookshelf-card">
-                                    <div className="bookshelf-session">
-                                    <div
-                                className="bookshelf-session-cover"
-                                style={{
-                                width: 60,
-                                height: 90,
-                                borderRadius: 4,
-                                overflow: "hidden",
-                                background: "#e8e0cc",
-                                flexShrink: 0,
-                            }}
-                            >
-                            {selectedBook.book.coverUrl ? (
-                                <img
-                                src={selectedBook.book.coverUrl}
-                                alt={selectedBook.book.name}
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                }}
-                                />
-                            ) : (
-                                <div
-                                style={{
-                                    fontSize: 10,
-                                    textAlign: "center",
-                                    paddingTop: 30,
-                                    color: "#8a7d6a",
-                                }}
-                                >
-                                No cover
-                                </div>
-                            )}
-                            </div>
+                        <>
+                            <div className="bookshelf-card">
+                                <div className="bookshelf-session">
+                                    <div className="session-active-cover">
+                                        {selectedBook.book.coverUrl ? (
+                                            <img
+                                                src={selectedBook.book.coverUrl}
+                                                alt={selectedBook.book.name}
+                                                className="session-active-cover-img"
+                                            />
+                                        ) : (
+                                            <div className="session-active-cover-empty">No cover</div>
+                                        )}
+                                    </div>
                                     <div className="bookshelf-session-info">
                                         <div className="bookshelf-session-title">
                                             {selectedBook.book.name} – {selectedBook.book.authors}
                                         </div>
                                         <div className="bookshelf-session-subtitle">
-                                            {selectedBook.book.name} – {selectedBook.book.authors}
                                             {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.book.pages ?? 0}
                                         </div>
                                         <div className="bookshelf-progress-bar">
@@ -347,52 +268,31 @@ const ReadingSessionComponent = () => {
                                 </div>
                             </div>
 
-                            {/* Page Update + Stats */}
-                            <div className="dashboard-bottom-row" style={{ alignItems: "flex-start" }}>
-
-                                {/* Update Page */}
+                            <div className="dashboard-bottom-row session-stats-row">
                                 <div className="bottom-card">
                                     <div className="bottom-card-title">Update your page</div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
-                                        <Button
-                                            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-                                            style={{ fontWeight: 700, fontSize: "1.1rem" }}
-                                        >−</Button>
-                                        <div style={{
-                                            border: "1px solid #d4c9b0",
-                                            borderRadius: 6,
-                                            padding: "6px 20px",
-                                            fontSize: "1.3rem",
-                                            fontWeight: 700,
-                                            background: "white",
-                                            minWidth: 70,
-                                            textAlign: "center",
-                                        }}>
-                                            {currentPage}
-                                        </div>
-                                        <Button
-                                            onClick={() => setCurrentPage((p) => Math.min(selectedBook.book.pages ?? 0, p + 1))}
-                                            style={{ fontWeight: 700, fontSize: "1.1rem" }}
-                                        >+</Button>
-                                        <span style={{ color: "#8a7d6a", fontSize: "0.9rem" }}>of {selectedBook.book.pages ?? 0}</span>
+                                    <div className="session-page-controls">
+                                        <Button className="session-page-btn" onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}>−</Button>
+                                        <div className="session-page-display">{currentPage}</div>
+                                        <Button className="session-page-btn" onClick={() => setCurrentPage((p) => Math.min(selectedBook.book.pages ?? 0, p + 1))}>+</Button>
+                                        <span className="session-page-total">of {selectedBook.book.pages ?? 0}</span>
                                     </div>
-                                    <div className="bookshelf-progress-bar" style={{ marginBottom: 6 }}>
+                                    <div className="bookshelf-progress-bar session-progress-bar">
                                         <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
                                     </div>
                                     <div className="bookshelf-progress-label">
-                                        {( selectedBook.book.pages ?? 0 ) - currentPage} pages remaining
+                                        {(selectedBook.book.pages ?? 0) - currentPage} pages remaining
                                     </div>
                                 </div>
 
-                                {/* Session Stats */}
                                 <div className="bottom-card">
                                     <div className="bottom-card-title">Session stats</div>
-                                    <div className="profile-stats" style={{ marginTop: 16, gridTemplateColumns: "1fr 1fr" }}>
+                                    <div className="profile-stats session-stats-grid">
                                         {[
                                             [formatTime(seconds), "time today"],
                                             [String(Math.max(0, currentPage - startPage)), "pages this session"],
                                             [String(Math.round((currentPage / (selectedBook.book.pages ?? 0)) * 100)) + "%", "book complete"],
-                                            [String( (selectedBook.book.pages ?? 0) - currentPage), "pages left"],
+                                            [String((selectedBook.book.pages ?? 0) - currentPage), "pages left"],
                                         ].map(([val, label], i) => (
                                             <div key={i} className="profile-stat-cell">
                                                 {val}
@@ -403,19 +303,16 @@ const ReadingSessionComponent = () => {
                                 </div>
                             </div>
 
-                            {/* Finish Session */}
-                            <div style={{ textAlign: "center", marginTop: 8 }}>
+                            <div className="session-finish-row">
                                 <Button
-                                    className="bookshelf-session-btn-pause"
+                                    className="bookshelf-session-btn-pause session-finish-btn"
                                     onClick={handleFinishSession}
-                                    style={{ minWidth: 200, height: 44, fontSize: "1rem" }}
                                 >
                                     Finish &amp; Log Session
                                 </Button>
                             </div>
                         </>
                     )}
-
                 </div>
             </div>
             <ToastContainer position="top-center" />
