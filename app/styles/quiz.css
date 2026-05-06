@@ -21,6 +21,13 @@
     gap: 36px;
 }
 
+.quiz-lb-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+}
+
 /* ── Page header ────────────────────────────────────── */
 .quiz-page-title {
     font-size: 28px;
@@ -471,8 +478,9 @@
 
 .quiz-challenge-actions {
     display: flex;
+    gap: 0;
+    padding: 12px 16px;
     gap: 10px;
-    padding: 0 16px 14px;
 }
 
 .quiz-accept-btn {
