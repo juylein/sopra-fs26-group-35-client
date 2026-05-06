@@ -429,8 +429,8 @@ const Dashboard: React.FC = () => {
                             ).slice(0, RECENT_MAX);
 
                             const rows: Book[][] = [];
-                            for (let i = 0; i < recentBooks.length; i += 12) {
-                                rows.push(recentBooks.slice(i, i + 12));
+                            for (let i = 0; i < recentBooks.length; i += BOOKS_PER_ROW) {
+                                rows.push(recentBooks.slice(i, i + BOOKS_PER_ROW));
                             }
                             if (rows.length === 0) rows.push([]); // always at least one plank
 
@@ -445,15 +445,15 @@ const Dashboard: React.FC = () => {
                                                     <div
                                                         key={book.id}
                                                         title={book.name}
-                                                        className="book-spine-sm"
+                                                        className="book-spine"
                                                         style={{ cursor: "pointer" }}
                                                         onClick={() => router.push(`/books/${book.id}`)}
                                                     >
                                                         {book.coverUrl ? (
                                                             <img
-                                                                src={book.coverUrl}
-                                                                alt={book.name}
-                                                                className="book-cover-img"
+                                                            src={book.coverUrl}
+                                                            alt={book.name}
+                                                            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
                                                             />
                                                         ) : (
                                                             book.name.split(" ").slice(0, 2).join(" ")
