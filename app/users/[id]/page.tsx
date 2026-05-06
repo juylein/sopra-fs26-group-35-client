@@ -23,14 +23,6 @@ const FRIENDS = [
     { name: "Vanessa", action: "finished", book: "And Then There Were None", time: "20h ago", color: "#2a7a4a" },
 ];
 
-const LB = [
-    { rank: 1, name: "Julie", points: 61, color: "#8b1a1a" },
-    { rank: 2, name: "Vanessa", points: 58, color: "#2a7a4a" },
-    { rank: 3, name: "Fraia", points: 53, color: "#3a5a8b" },
-    { rank: 4, name: "Natalia", points: 52, color: "#5a5a5a" },
-];
-
-
 const BOOKS_PER_ROW = 18;
 const SHELF_MAX = BOOKS_PER_ROW * 3;
 const RECENT_MAX = BOOKS_PER_ROW * 1;
@@ -101,10 +93,14 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         const fetchLatest = async () => {
             try {
-                const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null }>(
+                const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null } | null>(
                     `/users/${userId}/sessions/latest`
                 );
-                setLatestSession(data);
+                if (data && data.id) {
+                    setLatestSession(data);
+                } else {
+                    setLatestSessionEmpty(true);
+                }
             } catch {
                 setLatestSessionEmpty(true);
             }
