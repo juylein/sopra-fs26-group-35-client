@@ -603,3 +603,124 @@
   cursor: pointer;
   text-decoration: underline;
 }
+
+/* ─── Reading Stats Card ────────────────────────── */
+.stats-card {
+  background: #faf7f2;
+  border: 1px solid #e0d8cc;
+  border-radius: 12px;
+  padding: 22px 28px;
+}
+
+.stats-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.stats-body {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* Left: metric cells */
+.stats-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 0 0 180px;
+  gap: 0;
+}
+
+.stats-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 12px;
+  gap: 4px;
+  flex: 1;
+}
+
+.stats-metric-icon {
+  font-size: 22px;
+}
+
+.stats-metric-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.stats-metric-label {
+  font-size: 12px;
+  color: #7a6e5e;
+}
+
+.stats-divider {
+  height: 1px;
+  background: #e0d8cc;
+  margin: 0 12px;
+}
+
+.stats-vertical-divider {
+  width: 1px;
+  align-self: stretch;
+  background: #e0d8cc;
+  margin: 0 28px;
+  flex-shrink: 0;
+}
+
+/* Right: genre chart */
+.stats-genre {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stats-genre-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #7a6e5e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stats-genre-body {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.stats-genre-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 0 0 auto;       /* don't stretch — stay tight to pie */
+  min-width: 140px;
+  max-width: 200px;
+}
+
+.stats-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  white-space: nowrap;  /* keep label + pct on one line */
+}
+
+.stats-legend-label {
+  flex: 1;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats-legend-pct {
+  font-weight: 700;
+  color: #7a6e5e;
+  font-size: 12px;
+  margin-left: 4px;
+}

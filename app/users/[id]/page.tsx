@@ -23,13 +23,6 @@ const FRIENDS = [
     { name: "Vanessa", action: "finished", book: "And Then There Were None", time: "20h ago", color: "#2a7a4a" },
 ];
 
-const LB = [
-    { rank: 1, name: "Julie", points: 61, color: "#8b1a1a" },
-    { rank: 2, name: "Vanessa", points: 58, color: "#2a7a4a" },
-    { rank: 3, name: "Fraia", points: 53, color: "#3a5a8b" },
-    { rank: 4, name: "Natalia", points: 52, color: "#5a5a5a" },
-];
-
 
 const BOOKS_PER_ROW = 18;
 const SHELF_MAX = BOOKS_PER_ROW * 3;
@@ -76,6 +69,18 @@ const Dashboard: React.FC = () => {
         const currentUserStats = leaderboard.find(
             (u) => u.id=== Number(id)
         );
+
+    // Leaderboard state
+    const sortedLeaderboard = [...leaderboard].sort((a, b) => b.totalPoints - a.totalPoints);
+    const currentUserRank = sortedLeaderboard.findIndex((u) => u.id === Number(id)) + 1;
+    const currentUserLeaderboardEntry = sortedLeaderboard.find((u) => u.id === Number(id));
+
+    // Stats
+    const [stats, setStats] = useState<{
+        totalMinutes: number;
+        booksThisMonth: number;
+        avgPagesPerSession: number;
+    } | null>(null);
 
     // Fetch shelves on component mount
     useEffect(() => {
@@ -205,6 +210,23 @@ const Dashboard: React.FC = () => {
 
         fetchUser();
     }, [apiService, id, userId, router]);
+
+    useEffect(() => {
+    const fetchStats = async () => {
+        if (!userId) return;
+        try {
+        const data = await apiService.get<{
+            totalMinutes: number;
+            booksThisMonth: number;
+            avgPagesPerSession: number;
+        }>(`/users/${userId}/statistics`);
+        setStats(data);
+        } catch {
+        // fall back to null — card will show dashes
+        }
+    };
+    fetchStats();
+    }, [apiService, userId]);
 
     return (
         <div className="dashboard-root">
@@ -470,6 +492,99 @@ const Dashboard: React.FC = () => {
                         })()}
                     </div>
 
+                    {/* Reading Stats */}
+                    <div className="stats-card">
+                    <div className="stats-card-title">Reading Stats</div>
+                    <div className="stats-body">
+
+                        {/* Left: 2 metric cells */}
+                        <div className="stats-metrics">
+                        <div className="stats-metric">
+                            <div className="stats-metric-icon">📚</div>
+                            <div className="stats-metric-value">{booksRead}</div>
+                            <div className="stats-metric-label">Books read</div>
+                        </div>
+                        <div className="stats-divider" />
+                        <div className="stats-metric">
+                            <div className="stats-metric-icon">📄</div>
+                            <div className="stats-metric-value">{pagesRead.toLocaleString()}</div>
+                            <div className="stats-metric-label">Pages read</div>
+                        </div>
+                        </div>
+
+                        <div className="stats-vertical-divider" />
+
+                        {/* Middle: Genre pie chart */}
+                        {(() => {
+                        const genreCounts: Record<string, number> = {};
+                        (readShelf?.shelfBooks ?? []).forEach((sb) => {
+                            const genre = sb.book.genre ?? "Unknown";
+                            genreCounts[genre] = (genreCounts[genre] ?? 0) + 1;
+                        });
+
+                        const entries = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]);
+                        const total = entries.reduce((s, [, v]) => s + v, 0);
+
+                        const COLORS = [
+                            "#3a5a8b", "#8b1a1a", "#2a7a4a", "#c4903a",
+                            "#5a5a5a", "#7a3080", "#3a8b7a", "#8b6a1a",
+                        ];
+
+                        if (total === 0) {
+                            return (
+                            <div className="stats-genre">
+                                <div className="stats-genre-title">Genres read</div>
+                                <div className="shelf-empty" style={{ textAlign: "center", paddingTop: 24 }}>
+                                Start reading to see your stats!
+                                </div>
+                            </div>
+                            );
+                        }
+
+                        // Build SVG pie chart
+                        let cumAngle = -Math.PI / 2;
+                        const cx = 70;
+                        const cy = 70;
+                        const r = 60;
+
+                        const slices = entries.map(([genre, count], i) => {
+                            const angle = (count / total) * 2 * Math.PI;
+                            const x1 = cx + r * Math.cos(cumAngle);
+                            const y1 = cy + r * Math.sin(cumAngle);
+                            cumAngle += angle;
+                            const x2 = cx + r * Math.cos(cumAngle);
+                            const y2 = cy + r * Math.sin(cumAngle);
+                            const largeArc = angle > Math.PI ? 1 : 0;
+                            const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                            return { genre, count, path, color: COLORS[i % COLORS.length] };
+                        });
+
+                        return (
+                            <div className="stats-genre">
+                            <div className="stats-genre-title">Genres read</div>
+                            <div className="stats-genre-body">
+                            <svg width="200" height="200" viewBox="0 0 140 140">
+                                {slices.map((s, i) => (
+                                <path key={i} d={s.path} fill={s.color} stroke="#faf7f2" strokeWidth="2" />
+                                ))}
+                                <circle cx={cx} cy={cy} r={30} fill="#faf7f2" />
+                            </svg>
+                            <div className="stats-genre-legend">
+                                {slices.map((s, i) => (
+                                <div key={i} className="stats-legend-row">
+                                    <div className="stats-legend-dot" style={{ background: s.color }} />
+                                    <span className="stats-legend-label">{s.genre}</span>
+                                    <span className="stats-legend-pct">{Math.round((s.count / total) * 100)}%</span>
+                                </div>
+                                ))}
+                            </div>
+                            </div>
+                            </div>
+                        );
+                        })()}
+                    </div>
+                    </div>
+
                     {/* Bottom Row */}
                     <div className="dashboard-bottom-row">
 
@@ -493,49 +608,66 @@ const Dashboard: React.FC = () => {
 
                         {/* Leaderboard */}
                         <div className="bottom-card">
-                        <div className="bottom-card-title">Leaderboard</div>
+                            <div className="bottom-card-title">Leaderboard</div>
 
-                        <div className="lb-list">
-                            {leaderboard.length === 0 ? (
-                                <div className="shelf-empty">No leaderboard data yet.</div>
-                            ) : (
-                                leaderboard.map((r, i) => (
-                                    <div key={r.id ?? i} className="lb-row">
-                                        <div className="lb-rank">{i + 1}</div>
+                            <div className="lb-list">
+                                {sortedLeaderboard.length === 0 ? (
+                                    <div className="shelf-empty">No leaderboard data yet.</div>
+                                ) : (
+                                    <>
+                                        {sortedLeaderboard.slice(0, 5).map((r, i) => (
+                                            <div key={r.id ?? i} className="lb-row">
+                                                <div className="lb-rank">{i + 1}</div>
 
-                                        <div
-                                            className="lb-avatar"
-                                            style={{ background: "#3a5a8b" }}
-                                        >
-                                            {r.username[0].toUpperCase()}
-                                        </div>
+                                                <div
+                                                    className="lb-avatar"
+                                                    style={{ background: "#3a5a8b" }}
+                                                >
+                                                    {r.username[0].toUpperCase()}
+                                                </div>
 
-                                        <div className="lb-name">{r.username}</div>
+                                                <div className="lb-name">{r.username}</div>
 
-                                        <div className="lb-points">
-                                            {r.totalPoints} points
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                                <div className="lb-points">
+                                                    {r.totalPoints} points
+                                                </div>
+                                            </div>
+                                        ))}
 
-                            <div className="lb-dots">···</div>
+                                        {currentUserLeaderboardEntry &&
+                                            currentUserRank > 0 && (
+                                                <>
+                                                <div className="lb-dots">···</div>
 
-                            <div className="lb-row-self">
-                                <div className="lb-rank">–</div>
+                                                <div className="lb-row-self">
+                                                    <div className="lb-rank">
+                                                        {currentUserRank}
+                                                    </div>
 
-                                <div className="lb-avatar" style={{ background: "#7a6e5e" }}>
-                                    {user?.name?.[0]?.toUpperCase() ?? "U"}
-                                </div>
+                                                    <div
+                                                        className="lb-avatar"
+                                                        style={{ background: "#3a5a8b" }}
+                                                    >
+                                                        {user?.username?.toUpperCase()[0] ?? "U"}
+                                                    </div>
 
-                                <div className="lb-name" style={{ fontWeight: 700 }}>
-                                    {user?.name ?? "User"}
-                                </div>
+                                                    <div
+                                                        className="lb-name"
+                                                        style={{ fontWeight: 700 }}
+                                                    >
+                                                        {currentUserLeaderboardEntry.username}
+                                                    </div>
 
-                                <div className="lb-points">–</div>
+                                                    <div className="lb-points">
+                                                        {currentUserLeaderboardEntry.totalPoints} points
+                                                    </div>
+                                                </div>
+                                                </>
+                                            )}
+                                    </>
+                                )}
                             </div>
                         </div>
-                    </div>
 
                     </div>
                 </div>
