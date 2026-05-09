@@ -7,7 +7,7 @@ import "@/styles/topbar.css";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useApi } from "@/hooks/useApi";
 
-type NotificationType = "FRIEND_REQUEST" | "QUIZ_CHALLENGE" | "FRIEND_ACTIVITY";
+type NotificationType = "FRIEND_REQUEST" | "QUIZ_CHALLENGE" | "FRIEND_ACTIVITY" | "SHARED_SESSION";
 
 type Notification = {
     id: number;
@@ -22,12 +22,14 @@ const TYPE_ICON: Record<NotificationType, React.ReactNode> = {
     FRIEND_REQUEST: <UserPlus size={15} />,
     QUIZ_CHALLENGE: <HelpCircle size={15} />,
     FRIEND_ACTIVITY: <Activity size={15} />,
+    SHARED_SESSION: <Activity size={15} />,
 };
 
 const TYPE_LABEL: Record<NotificationType, string> = {
     FRIEND_REQUEST: "Friend Request",
     QUIZ_CHALLENGE: "Quiz Challenge",
     FRIEND_ACTIVITY: "Friend Activity",
+    SHARED_SESSION:  "Shared Session",
 };
 
 type TopBarProps = {
@@ -111,7 +113,7 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
         {} as Record<NotificationType, Notification[]>
     );
 
-    const groupOrder: NotificationType[] = ["FRIEND_REQUEST", "QUIZ_CHALLENGE", "FRIEND_ACTIVITY"];
+    const groupOrder: NotificationType[] = ["FRIEND_REQUEST", "QUIZ_CHALLENGE", "FRIEND_ACTIVITY", 'SHARED_SESSION'];
 
     return (
         <header className="topbar">
@@ -167,7 +169,6 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
                         </div>
                     )}
                 </div>
-
                 <Button className="topbar-logout-btn" onClick={onLogout}>
                     Logout
                 </Button>
