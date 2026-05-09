@@ -7,6 +7,7 @@ import { User } from "@/types/user";
 import { Button, Form, Input } from "antd";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 import "@/styles/login.css";
+import { useNotificationContext } from "@/components/context/notificationProvider";
 
 interface LoginFormValues {
   username: string;
@@ -18,6 +19,7 @@ const Login: React.FC = () => {
   const apiService = useApi();
   const [form] = Form.useForm();
   const { handleErrorMessage } = useHandleErrorMessage();
+  const { setNotificationUserId } = useNotificationContext();
   const {
     set: setToken,
   } = useLocalStorage<string>("token", "");
@@ -31,7 +33,11 @@ const Login: React.FC = () => {
       if (response.token) {
         setToken(response.token);
       }
-      if (response.id) { setUserId(String(response.id))}
+      if (response.id) {
+        setUserId(String(response.id));
+        setNotificationUserId(String(response.id));
+      }
+
       router.push(`/users/${response.id}`);
 
     }  catch (error) {

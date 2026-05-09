@@ -6,6 +6,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
 import { Button, Form, Input, Select } from "antd";
 import "@/styles/register.css"
+import { useNotificationContext } from "@/components/context/notificationProvider";
 
 const GENRES = [
     "Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance",
@@ -27,6 +28,7 @@ const Register: React.FC = () => {
     const [form] = Form.useForm();
     const { set: setToken } = useLocalStorage<string>("token","");
     const { set: setUserId } = useLocalStorage<string>("id","");
+    const { setNotificationUserId } = useNotificationContext();
 
     const handleRegister = async (values: RegisterFormValues) => {
         try {
@@ -34,6 +36,7 @@ const Register: React.FC = () => {
 
             if (response.token) setToken(response.token);
             if (response.id) setUserId(String(response.id));
+            if (response.id) setNotificationUserId(String(response.id));
 
             router.push(`/users/${response.id}`);
         } catch (error) {
