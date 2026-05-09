@@ -14,9 +14,6 @@ interface NotificationEventSharedSession {
     sessionId: string;
 }
 
-export interface NotificationEventSharedSessionStartPayload
-    extends NotificationEventSharedSession {}
-
 export interface NotificationEventSharedSessionJoinPayload
     extends NotificationEventSharedSession {
     shelfBook: ShelfBook;
@@ -30,7 +27,7 @@ export interface NotificationEventSharedSessionPagePayload
 export type NotificationEvent =
     | {
           type: NotificationEventType.SHARED_SESSION_START;
-          payload: NotificationEventSharedSessionStartPayload;
+          payload: NotificationEventSharedSession;
       }
     | {
           type: NotificationEventType.SHARED_SESSION_JOIN;
