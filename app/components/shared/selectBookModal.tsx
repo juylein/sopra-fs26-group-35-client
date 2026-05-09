@@ -2,7 +2,6 @@
 
 import { useApi } from "@/hooks/useApi";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
-import { Book } from "@/types/book";
 import { Shelf } from "@/types/shelf";
 import { ShelfBook } from "@/types/shelfbook";
 import { Button, Flex, Modal, Spin } from "antd";

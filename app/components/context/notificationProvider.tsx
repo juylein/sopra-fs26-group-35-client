@@ -3,13 +3,9 @@
 import React, { createContext, PropsWithChildren, useContext } from "react";
 import { useNotifications, UseNotificationsResult } from "@/hooks/useNotifications";
 
-type INotificationContext = UseNotificationsResult;
+export const NotificationContext = createContext<UseNotificationsResult | null>(null);
 
-export const NotificationContext = createContext<INotificationContext | null>(null);
-
-interface NotificationProviderProps extends PropsWithChildren {}
-
-export const NotificationProvider = ({ children }: NotificationProviderProps) => {
+export const NotificationProvider = ({ children }: PropsWithChildren) => {
     const result = useNotifications();
 
     return (
@@ -20,7 +16,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
 };
 
 export const useNotificationContext = () => {
-    const context = useContext<INotificationContext | null>(NotificationContext);
+    const context = useContext<UseNotificationsResult | null>(NotificationContext);
 
     if (!context) {
         throw new Error("useNotificationContext must be used within a NotificationProvider");
