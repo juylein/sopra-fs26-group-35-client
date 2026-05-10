@@ -30,8 +30,16 @@ const GENRE_COLORS = [
 ];
 
 
-const formatActivityTime = (iso: string): string => {
-    const diff = Date.now() - new Date(iso).getTime();
+const formatActivityTime = (raw: string | number[]): string => {
+    // Jackson 3.x serialises LocalDateTime as [year,month,day,hour,min,sec,...] by default
+    let date: Date;
+    if (Array.isArray(raw)) {
+        const [y, mo, d, h = 0, min = 0] = raw as number[];
+        date = new Date(y, mo - 1, d, h, min);
+    } else {
+        date = new Date(raw);
+    }
+    const diff = Date.now() - date.getTime();
     const minutes = Math.floor(diff / 60_000);
     if (minutes < 1) return "just now";
     if (minutes < 60) return `${minutes}m ago`;
@@ -39,7 +47,7 @@ const formatActivityTime = (iso: string): string => {
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days}d ago`;
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
 const BOOKS_PER_ROW = 18;
