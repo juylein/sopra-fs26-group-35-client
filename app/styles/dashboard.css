@@ -618,21 +618,6 @@
   margin-bottom: 20px;
 }
 
-.stats-body {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-/* Left: metric cells */
-.stats-metrics {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  flex: 0 0 180px;
-  gap: 0;
-}
-
 .stats-metric {
   display: flex;
   flex-direction: column;
@@ -672,14 +657,6 @@
   flex-shrink: 0;
 }
 
-/* Right: genre chart */
-.stats-genre {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .stats-genre-title {
   font-size: 14px;
   font-weight: 600;
@@ -698,7 +675,7 @@
   display: flex;
   flex-direction: column;
   gap: 7px;
-  flex: 0 0 auto;       /* don't stretch — stay tight to pie */
+  flex: 0 0 auto;     
   min-width: 140px;
   max-width: 200px;
 }
@@ -708,7 +685,7 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  white-space: nowrap;  /* keep label + pct on one line */
+  white-space: nowrap; 
 }
 
 .stats-legend-label {
@@ -723,4 +700,43 @@
   color: #7a6e5e;
   font-size: 12px;
   margin-left: 4px;
+}
+
+.stats-body {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+
+.stats-genre {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stats-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 0 0 160px;
+  gap: 0;
+}
+
+.stats-legend-dot {
+  width: 10px;
+  height: 10px;
+  min-width: 10px; 
+  min-height: 10px;   
+  border-radius: 50%;
+  flex-shrink: 0; 
+}
+
+.stats-chart-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
 }

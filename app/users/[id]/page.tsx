@@ -15,6 +15,7 @@ import { ToastContainer } from "react-toastify";
 import {UserStats} from "@/types/leaderboard";
 import {Activities} from "@/types/activities";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
+import PieChart from "@/components/piechart";
 
 const FRIENDS = [
     { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
@@ -23,6 +24,10 @@ const FRIENDS = [
     { name: "Vanessa", action: "finished", book: "And Then There Were None", time: "20h ago", color: "#2a7a4a" },
 ];
 
+const GENRE_COLORS = [
+  "#3a5a8b", "#8b1a1a", "#2a7a4a", "#c4903a",
+  "#5a5a5a", "#7a3080", "#3a8b7a", "#8b6a1a",
+];
 
 const BOOKS_PER_ROW = 18;
 const SHELF_MAX = BOOKS_PER_ROW * 3;
@@ -76,10 +81,13 @@ const Dashboard: React.FC = () => {
     const currentUserLeaderboardEntry = sortedLeaderboard.find((u) => u.id === Number(id));
 
     // Stats
-    const [stats, setStats] = useState<{
-        totalMinutes: number;
-        booksThisMonth: number;
-        avgPagesPerSession: number;
+    const [userStats, setUserStats] = useState<{
+    totalPoints: number;
+    booksRead: number;
+    pagesRead: number;
+    numFriends: number;
+    readingPoints: number;
+    quizzPoints: number;
     } | null>(null);
 
     // Fetch shelves on component mount
@@ -212,21 +220,31 @@ const Dashboard: React.FC = () => {
     }, [apiService, id, userId, router]);
 
     useEffect(() => {
-    const fetchStats = async () => {
-        if (!userId) return;
-        try {
-        const data = await apiService.get<{
-            totalMinutes: number;
-            booksThisMonth: number;
-            avgPagesPerSession: number;
-        }>(`/users/${userId}/statistics`);
-        setStats(data);
-        } catch {
-        // fall back to null — card will show dashes
-        }
-    };
-    fetchStats();
-    }, [apiService, userId]);
+        const fetchStats = async () => {
+            if (!userId || !id) return;
+
+            try {
+                console.log(`Fetching stats for user ID ${id}...`);
+
+                const data = await apiService.get<{
+                    totalPoints: number;
+                    booksRead: number;
+                    pagesRead: number;
+                    numFriends: number;
+                    readingPoints: number;
+                    quizzPoints: number;
+                }>(`/users/${id}/statistics`);
+
+                console.log("Fetched user stats:", data);
+
+                setUserStats(data);
+            } catch (error) {
+                console.error("Failed to fetch user stats:", error);
+            }
+        };
+
+        fetchStats();
+    }, [apiService, id, userId]);
 
     return (
         <div className="dashboard-root">
@@ -497,91 +515,64 @@ const Dashboard: React.FC = () => {
                     <div className="stats-card-title">Reading Stats</div>
                     <div className="stats-body">
 
-                        {/* Left: 2 metric cells */}
+                        {/* Left: reading points + quiz points */}
                         <div className="stats-metrics">
                         <div className="stats-metric">
-                            <div className="stats-metric-icon">📚</div>
-                            <div className="stats-metric-value">{booksRead}</div>
-                            <div className="stats-metric-label">Books read</div>
+                            <div className="stats-metric-icon">📖</div>
+                            <div className="stats-metric-value">{userStats?.readingPoints ?? "—"}</div>
+                            <div className="stats-metric-label">Reading points</div>
                         </div>
                         <div className="stats-divider" />
                         <div className="stats-metric">
-                            <div className="stats-metric-icon">📄</div>
-                            <div className="stats-metric-value">{pagesRead.toLocaleString()}</div>
-                            <div className="stats-metric-label">Pages read</div>
+                            <div className="stats-metric-icon">🧠</div>
+                            <div className="stats-metric-value">{userStats?.quizzPoints ?? "—"}</div>
+                            <div className="stats-metric-label">Quiz points</div>
                         </div>
                         </div>
 
                         <div className="stats-vertical-divider" />
 
-                        {/* Middle: Genre pie chart */}
-                        {(() => {
-                        const genreCounts: Record<string, number> = {};
-                        (readShelf?.shelfBooks ?? []).forEach((sb) => {
-                            const genre = sb.book.genre ?? "Unknown";
-                            genreCounts[genre] = (genreCounts[genre] ?? 0) + 1;
-                        });
+                        {/* Middle: Genre breakdown pie */}
+                        <div className="stats-chart-section">
+                            <div className="stats-genre-title">Genres Read</div>
 
-                        const entries = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]);
-                        const total = entries.reduce((s, [, v]) => s + v, 0);
+                            <PieChart
+                                slices={
+                                    Object.entries(
+                                        (readShelf?.shelfBooks ?? []).reduce<Record<string, number>>((acc, sb) => {
+                                            const g = sb.book.genre ?? "Unknown";
+                                            acc[g] = (acc[g] ?? 0) + 1;
+                                            return acc;
+                                        }, {})
+                                    )
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([label, value], i) => ({
+                                        label,
+                                        value,
+                                        color: GENRE_COLORS[i % GENRE_COLORS.length],
+                                    }))
+                                }
+                                emptyMessage="Start reading to see your genre breakdown!"
+                            />
+                        </div>
 
-                        const COLORS = [
-                            "#3a5a8b", "#8b1a1a", "#2a7a4a", "#c4903a",
-                            "#5a5a5a", "#7a3080", "#3a8b7a", "#8b6a1a",
-                        ];
+                        <div className="stats-vertical-divider" />
 
-                        if (total === 0) {
-                            return (
-                            <div className="stats-genre">
-                                <div className="stats-genre-title">Genres read</div>
-                                <div className="shelf-empty" style={{ textAlign: "center", paddingTop: 24 }}>
-                                Start reading to see your stats!
-                                </div>
-                            </div>
-                            );
-                        }
+                        {/* Right: Points breakdown donut */}
+                        <div className="stats-chart-section">
+                            <div className="stats-genre-title">Points Breakdown</div>
 
-                        // Build SVG pie chart
-                        let cumAngle = -Math.PI / 2;
-                        const cx = 70;
-                        const cy = 70;
-                        const r = 60;
+                            <PieChart
+                                slices={[
+                                    { label: "Reading", value: userStats?.readingPoints ?? 0, color: "#3a5a8b" },
+                                    { label: "Quiz", value: userStats?.quizzPoints ?? 0, color: "#c4903a" },
+                                ]}
+                                showTotal
+                                centerLabel="total"
+                                emptyMessage="Earn points to see your breakdown!"
+                            />
+                        </div>
 
-                        const slices = entries.map(([genre, count], i) => {
-                            const angle = (count / total) * 2 * Math.PI;
-                            const x1 = cx + r * Math.cos(cumAngle);
-                            const y1 = cy + r * Math.sin(cumAngle);
-                            cumAngle += angle;
-                            const x2 = cx + r * Math.cos(cumAngle);
-                            const y2 = cy + r * Math.sin(cumAngle);
-                            const largeArc = angle > Math.PI ? 1 : 0;
-                            const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-                            return { genre, count, path, color: COLORS[i % COLORS.length] };
-                        });
-
-                        return (
-                            <div className="stats-genre">
-                            <div className="stats-genre-title">Genres read</div>
-                            <div className="stats-genre-body">
-                            <svg width="200" height="200" viewBox="0 0 140 140">
-                                {slices.map((s, i) => (
-                                <path key={i} d={s.path} fill={s.color} stroke="#faf7f2" strokeWidth="2" />
-                                ))}
-                                <circle cx={cx} cy={cy} r={30} fill="#faf7f2" />
-                            </svg>
-                            <div className="stats-genre-legend">
-                                {slices.map((s, i) => (
-                                <div key={i} className="stats-legend-row">
-                                    <div className="stats-legend-dot" style={{ background: s.color }} />
-                                    <span className="stats-legend-label">{s.genre}</span>
-                                    <span className="stats-legend-pct">{Math.round((s.count / total) * 100)}%</span>
-                                </div>
-                                ))}
-                            </div>
-                            </div>
-                            </div>
-                        );
-                        })()}
                     </div>
                     </div>
 
