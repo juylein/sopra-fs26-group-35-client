@@ -25,13 +25,10 @@ export const useNotifications = (): UseNotificationsResult => {
     useEffect(() => {
         if (userId == null) return;
 
-        console.log(userId);
-    
         let subscription: StompSubscription;
-    
-        stompClient.onConnect = () => {
-            console.warn(`connected ${userId}`);
 
+        const subscribe = () => {
+            console.warn(`connected ${userId}`);
             subscription = stompClient.subscribe(
                 `/topic/notifications/${userId}`,
                 (message) => {
@@ -41,15 +38,21 @@ export const useNotifications = (): UseNotificationsResult => {
                 }
             );
         };
-    
-        stompClient.activate();
-    
+
+        if (stompClient.connected) {
+            // already connected, subscribe immediately
+            subscribe();
+        } else {
+            // not yet connected, subscribe once connection is established
+            stompClient.onConnect = subscribe;
+            stompClient.activate();
+        }
+
         return () => {
             console.warn(`disconnecting ${userId}`);
             subscription?.unsubscribe();
-            stompClient.deactivate();
         };
-    
+
     }, [userId]);
 
     return {
