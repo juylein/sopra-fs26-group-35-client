@@ -25,9 +25,6 @@ export default function RootLayout({
 }>) {
   return (
       <html lang="en" className={philosopher.variable}>
-      <head>
-          <link rel="preconnect" href="https://www.googleapis.com" />
-      </head>
       <body>
       <ConfigProvider
           theme={{

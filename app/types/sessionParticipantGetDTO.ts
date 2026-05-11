@@ -1,4 +1,4 @@
-import { Book } from "./book";
+import Book from "@/books/page";
 import { User } from "./user";
 
 export interface SessionParticipantGetDTO {

@@ -1,11 +1,14 @@
 import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 import { getApiDomain } from "@/utils/domain";
 
 const apiDomain = getApiDomain();
 
+const websocketUrl = apiDomain
+    .replace("http://", "ws://")
+    .replace("https://", "wss://") + "/ws";
+
 export const stompClient = new Client({
-    webSocketFactory: () => new SockJS(`${apiDomain}/ws`),
+    brokerURL: websocketUrl,
 
     reconnectDelay: 5000,
 
