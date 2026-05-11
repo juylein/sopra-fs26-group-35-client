@@ -394,7 +394,7 @@ const SharedReadingSession: React.FC = () => {
                                             {selectedBook.book.name} – {selectedBook.book.authors}
                                         </div>
                                         <div className="bookshelf-session-subtitle">
-                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}/{selectedBook.book.pages}
+                                            {running ? "Session Active" : "Session Paused"} · Page {currentPage}{selectedBook.book.pages ? `/${selectedBook.book.pages}` : ""}
                                         </div>
                                         <div className="bookshelf-progress-bar">
                                             <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
@@ -432,7 +432,7 @@ const SharedReadingSession: React.FC = () => {
                                                 <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>{selectedBook.book.name}</div>
                                             </div>
                                             <div style={{ marginLeft: "auto", fontWeight: 700, fontSize: "0.85rem", color: "#1a1a1a" }}>
-                                                pg {currentPage}/{selectedBook.book.pages ?? 0}
+                                                pg {currentPage}{selectedBook.book.pages ? `/${selectedBook.book.pages}` : ""}
                                             </div>
                                         </div>
                                         <div className="bookshelf-progress-bar">
@@ -452,7 +452,7 @@ const SharedReadingSession: React.FC = () => {
                                                         <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>{p.book}</div>
                                                     </div>
                                                     <div style={{ marginLeft: "auto", fontWeight: 700, fontSize: "0.85rem", color: "#1a1a1a" }}>
-                                                        pg {p.page}/{p.total ?? 0}
+                                                        pg {p.page}{p.total > 0 ? `/${p.total}` : ""}
                                                     </div>
                                                 </div>
                                                 <div className="bookshelf-progress-bar">
@@ -469,7 +469,9 @@ const SharedReadingSession: React.FC = () => {
                                     <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
                                         <Button
                                             onClick={async () => {
-                                                const nPages = Math.max(0, currentPage - 1)
+                                                const nPages = selectedBook.book.pages
+                                                    ? Math.min(selectedBook.book.pages, currentPage - 1)
+                                                    : currentPage - 1;
                                                 setCurrentPage(nPages);
                                                 await handleSessionChangePage(nPages);
                                             }}
@@ -489,7 +491,9 @@ const SharedReadingSession: React.FC = () => {
                                         </div>
                                         <Button
                                             onClick={async () => {
-                                                const nPages = Math.min(selectedBook.book.pages ?? 0, currentPage + 1)
+                                                const nPages = selectedBook.book.pages
+                                                    ? Math.min(selectedBook.book.pages, currentPage + 1)
+                                                    : currentPage + 1;
                                                 setCurrentPage(nPages);
                                                 await handleSessionChangePage(nPages);
                                             }}
