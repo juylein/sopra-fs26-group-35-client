@@ -1,8 +1,14 @@
 import { Client } from "@stomp/stompjs";
+import { getApiDomain } from "@/utils/domain";
+
+const apiDomain = getApiDomain();
+
+const websocketUrl = apiDomain
+    .replace("http://", "ws://")
+    .replace("https://", "wss://") + "/ws";
 
 export const stompClient = new Client({
-
-    brokerURL: "ws://localhost:8080/ws",
+    brokerURL: websocketUrl,
 
     reconnectDelay: 5000,
 
