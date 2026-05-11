@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const serverCache = new Map<string, any>();
+const serverCache = new Map<string, unknown>();
 
 async function fetchWithRetry(url: string, retries = 4): Promise<Response> {
     for (let i = 0; i < retries; i++) {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ items: [] }, { status: res.status });
     }
 
-    const data = await res.json();
+    const data: unknown = await res.json();
     serverCache.set(cacheKey, data);
     return NextResponse.json(data);
 }
