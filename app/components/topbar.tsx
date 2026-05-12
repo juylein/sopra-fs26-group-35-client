@@ -49,6 +49,9 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
 
     const fetchUnreadCount = useCallback(async () => {
         if (!userId) return;
+
+        const token = localStorage.getItem("token");
+        if(!token) return;
         try {
             const data = await apiService.get<{ unreadCount: number }>(
                 `/users/${userId}/notifications/unread-count`
