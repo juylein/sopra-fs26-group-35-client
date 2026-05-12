@@ -157,3 +157,10 @@ reason).
 |                                   | [05.05.2026]      | [https://github.com/juylein/sopra-fs26-group-35-server/commit/0588d6753585b4fabd6b9cf83938430c53ca6fed] |   Functionality needed for the PUT .../reviews/{reviewId}endpoint including new controller and service files.                                                                                                                                                                                                                                               | A user can now change a once made review. |
 
 ---
+
+## Contributions Week 6 - [06.05.2026] to [13.05.2026]
+
+| **Student**                       | **Date**    | **Link to Commit** | **Description**                                                                                                                                                                                                                                 | **Relevance**                       |
+|-----------------------------------|-------------| ------------------ |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------------------------------- |
+| **@fraiaperezrayonforsman-cloud**                      | 10.05.2026   |https://github.com/juylein/sopra-fs26-group-35-server/commit/d45b62451907f8a99f19d69cf22e03230e9d929d | Fixed activity table logic | This contribution is relevant because the acitivity feed was not being shown correctly. Every time the user changed the status of the book the activity service was never called. 
+| **@fraiaperezrayonforsman-cloud**                      | 10.05.2026   |https://github.com/juylein/sopra-fs26-group-35-client/pull/117 | Activity table connection to frontend | The activity table is now connected and it is formatted as the original hardcoded design. This contribution is important for the social aspect of the application. 
