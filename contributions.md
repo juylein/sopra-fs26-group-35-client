@@ -176,5 +176,6 @@ reason).
 | **@juylein**                      | 11.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/1b7aaea8bafd3515ace77eac44d47d66638eeba6 | Resolved WebSocket connection issues for production  | Important for real-time shared reading sessions | 
 | **@juylein**                      | 11.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/b33d764e71fb14a8e7982ea63967c337a81959e5 | Fixed issue where session hosts couldn't update their page, handled missing page count data. | Important for real-time shared reading sessions | 
 | **@juylein**                      | 11.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/commit/51a3640f413c870e48bcf976a7891fe5ad1d3973 | Fixed Discover page filtering logic and API data handling inconsistencies | Book Api Rate Limiting won't reach too fast and is more reliable to show results now rather | 
-
+| **@minhgou**                      | 07.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/118/changes/c79976ca5159be170ea5ade875095785ca539711 | Added temporary stats card section in dashboard. | Layout for stats section in dashboard | 
+| **@minhgou**                      | 10.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/118/changes/44a1d7e102861daa46ef67d1e2623f2d6d51a37c | Added real time stats and pie charts | Added two pie charts and reading number and quiz points for user to see in dashboard. | 
 ---
