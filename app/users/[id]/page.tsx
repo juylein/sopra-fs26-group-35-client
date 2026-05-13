@@ -13,21 +13,42 @@ import { Shelf } from "@/types/shelf";
 import { Book } from "@/types/book";
 import { ToastContainer } from "react-toastify";
 import {UserStats} from "@/types/leaderboard";
-import {Activities} from "@/types/activities";
+import {Activity} from "@/types/activity";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 import PieChart from "@/components/piechart";
 
-const FRIENDS = [
-    { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
-    { name: "Fraia", action: "finished", book: "Lord of the Flies", time: "5h ago", color: "#3a5a8b" },
-    { name: "Natalia", action: "started reading", book: "A Gentleman in Moscow", time: "13h ago", color: "#5a5a5a" },
-    { name: "Vanessa", action: "finished", book: "And Then There Were None", time: "20h ago", color: "#2a7a4a" },
-];
+const avatarColor = (name: string) => {
+    const colors = ["#8b1a1a", "#3a5a8b", "#5a5a5a", "#2a7a4a", "#7a6e5e", "#6a3a8b"];
+    let hash = 0;
+    for (const c of name) hash += c.charCodeAt(0);
+    return colors[hash % colors.length];
+};
 
 const GENRE_COLORS = [
   "#3a5a8b", "#8b1a1a", "#2a7a4a", "#c4903a",
   "#5a5a5a", "#7a3080", "#3a8b7a", "#8b6a1a",
 ];
+
+
+const formatActivityTime = (raw: string | number[]): string => {
+    // Jackson 3.x serialises LocalDateTime as [year,month,day,hour,min,sec,...] by default
+    let date: Date;
+    if (Array.isArray(raw)) {
+        const [y, mo, d, h = 0, min = 0] = raw as number[];
+        date = new Date(y, mo - 1, d, h, min);
+    } else {
+        date = new Date(raw);
+    }
+    const diff = Date.now() - date.getTime();
+    const minutes = Math.floor(diff / 60_000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 const BOOKS_PER_ROW = 18;
 const SHELF_MAX = BOOKS_PER_ROW * 3;
@@ -59,7 +80,7 @@ const Dashboard: React.FC = () => {
     const [latestSessionEmpty, setLatestSessionEmpty] = useState(false);
     const [resumeLoading, setResumeLoading] = useState(false);
     const [leaderboard, setLeaderboard] = useState<UserStats[]>([]);
-    const [activities,setActivities] = useState<Activities[]>([]);
+    const [activities,setActivities] = useState<Activity[]>([]);
     // Compute selected shelf and books to display based on selectedShelfId
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const displayBooks = selectedShelf?.shelfBooks.map(sb => sb.book) ?? [];
@@ -163,10 +184,10 @@ const Dashboard: React.FC = () => {
             if (!userId) return;
     
             try {
-                const data = await apiService.get<Activities[]>(`/users/${userId}/activities`);
+                const data = await apiService.get<Activity[]>(`/users/${userId}/activities`);
                 setActivities(data);
             } catch (error) {
-                handleErrorMessage(error);
+                console.error("Failed to fetch activities", error);
             }
         };
     
@@ -583,17 +604,21 @@ const Dashboard: React.FC = () => {
                         <div className="bottom-card">
                             <div className="bottom-card-title">Friend Activity</div>
                             <div className="friend-list">
-                                {FRIENDS.map((f, i) => (
-                                    <div key={i} className="friend-row">
-                                        <div className="friend-avatar" style={{ background: f.color }}>{f.name[0]}</div>
-                                        <div style={{ flex: 1 }}>
-                                            <strong>{f.name}</strong>
-                                            <span className="friend-action"> {f.action} </span>
-                                            <strong>{f.book}</strong>
+                                {activities.length === 0 ? (
+                                    <div className="shelf-empty">No friend activity yet.</div>
+                                ) : (
+                                    activities.map((a) => (
+                                        <div key={a.id} className="friend-row">
+                                            <div className="friend-avatar" style={{ background: avatarColor(a.username) }}>{a.username[0].toUpperCase()}</div>
+                                            <div style={{ flex: 1 }}>
+                                                <strong>{a.username}</strong>
+                                                <span className="friend-action"> {a.actions} </span>
+                                                <strong>{a.book}</strong>
+                                            </div>
+                                            <div className="friend-time">{formatActivityTime(a.timestamp)}</div>
                                         </div>
-                                        <div className="friend-time">{f.time}</div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
 
