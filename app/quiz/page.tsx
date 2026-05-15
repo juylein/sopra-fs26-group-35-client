@@ -10,6 +10,8 @@ import "@/styles/quiz.css";
 import { toast, ToastContainer } from "react-toastify";
 import { UserStats } from "@/types/leaderboard";
 import { User } from "@/types/user";
+import { Shelf } from "@/types/shelf";
+import { Book } from "@/types/book";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 
 interface Question {
@@ -28,40 +30,27 @@ interface NotificationGetDTO {
     createdAt: string;
 }
 
-interface MyQuiz {
+interface QuizResultEntryDTO {
+    userId: number;
+    username: string;
+    scoreGot: number | null;
+    scoreTotal: number;
+    pending: boolean;
+}
+
+interface MyQuizSummaryDTO {
     id: number;
-    title: string;
-    book: string;
-    author: string;
-    difficulty: "Easy" | "Medium" | "Hard";
+    title: string | null;
+    difficulty: string | null;
+    bookId: number | null;
+    createdAt: string | null;
     questionCount: number;
-    timeAgo: string;
-    coverColor: string;
-    results: { name: string; color: string; score: string; pending: boolean }[];
+    results: QuizResultEntryDTO[] | null;
 }
 
 const AVATAR_COLORS = [
     "#8b1a1a", "#2a7a4a", "#3a5a8b", "#5a5a5a",
     "#7a4a2a", "#4a2a7a", "#2a4a7a", "#7a2a4a",
-];
-
-const MY_QUIZZES: MyQuiz[] = [
-    {
-        id: 1,
-        title: "Pachinko Deep Dive",
-        book: "Pachinko",
-        author: "Min Jin Lee",
-        difficulty: "Easy",
-        questionCount: 7,
-        timeAgo: "3 days ago",
-        coverColor: "#2a6a3a",
-        results: [
-            { name: "Julie",   color: "#8b1a1a", score: "7/7",  pending: false },
-            { name: "Vanessa", color: "#2a7a4a", score: "4/7",  pending: false },
-            { name: "Fraia",   color: "#3a5a8b", score: "4/7",  pending: false },
-            { name: "Natalia", color: "#5a5a5a", score: "",     pending: true  },
-        ],
-    },
 ];
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
@@ -79,12 +68,30 @@ const emptyQuestion = (): Question => ({
     answer: "",
 });
 
-const SELECTED_BOOK = {
-    id: 1,
-    title: "Wuthering Heights",
-    author: "Emily Brontë",
-    coverColor: "#3a5a8b",
-};
+function avatarColor(name: string): string {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+    return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function relativeTime(iso: string | null | undefined): string {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const diff = (Date.now() - d.getTime()) / 1000;
+    if (diff < 60)    return "Just now";
+    if (diff < 3600)  return `${Math.round(diff / 60)} min ago`;
+    if (diff < 86400) return `${Math.round(diff / 3600)} hours ago`;
+    const days = Math.round(diff / 86400);
+    if (days === 1)   return "Yesterday";
+    if (days < 30)    return `${days} days ago`;
+    if (days < 365)   return `${Math.round(days / 30)} months ago`;
+    return `${Math.round(days / 365)} years ago`;
+}
+
+function isValidQuiz(q: MyQuizSummaryDTO | null): q is MyQuizSummaryDTO & { title: string } {
+    return q !== null && !!q.title;
+}
 
 const Quiz: React.FC = () => {
     const router = useRouter();
@@ -102,19 +109,16 @@ const Quiz: React.FC = () => {
     const [isAuthorized, setIsAuthorized]       = useState(false);
     const [quizLeaderboard, setQuizLeaderboard] = useState<UserStats[]>([]);
     const [challenges, setChallenges]           = useState<NotificationGetDTO[]>([]);
+    const [myQuiz, setMyQuiz]                   = useState<MyQuizSummaryDTO | null>(null);
+    const [myQuizLoading, setMyQuizLoading]     = useState(true);
 
-    const handleLogout = async (): Promise<void> => {
-        try {
-            if (!userId) { router.push("/login"); return; }
-            await apiService.put(`/users/${userId}/logout`, {});
-        } catch (error) {
-            console.error("Logout error:", error);
-        } finally {
-            clearToken();
-            clearId();
-            router.push("/login");
-        }
-    };
+    const [bookModalOpen, setBookModalOpen]     = useState(false);
+    const [shelves, setShelves]                 = useState<Shelf[]>([]);
+    const [selectedBook, setSelectedBook]       = useState<Book | null>(null);
+    const [selectedShelfId, setSelectedShelfId] = useState<number | null>(null);
+
+    const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
+    const shelfBooks    = selectedShelf?.shelfBooks.map((sb) => sb.book) ?? [];
 
     useEffect(() => {
         if (!localStorage.getItem("token")) {
@@ -166,6 +170,49 @@ const Quiz: React.FC = () => {
         fetchFriends();
     }, [apiService, userId]);
 
+    useEffect(() => {
+        const fetchShelves = async () => {
+            if (!userId) return;
+            try {
+                const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
+                setShelves(data);
+                setSelectedShelfId(data.find((s) => s.name === "Read")?.id ?? data[0]?.id ?? null);
+            } catch (error) {
+                handleErrorMessage(error);
+            }
+        };
+        fetchShelves();
+    }, [apiService, userId]);
+
+    useEffect(() => {
+        const fetchLatestQuiz = async () => {
+            if (!userId) return;
+            setMyQuizLoading(true);
+            try {
+                const data = await apiService.get<MyQuizSummaryDTO>(`/users/${userId}/quizzes/latest`);
+                setMyQuiz(data ?? null);
+            } catch {
+                setMyQuiz(null);
+            } finally {
+                setMyQuizLoading(false);
+            }
+        };
+        fetchLatestQuiz();
+    }, [apiService, userId]);
+
+    const handleLogout = async (): Promise<void> => {
+        try {
+            if (!userId) { router.push("/login"); return; }
+            await apiService.put(`/users/${userId}/logout`, {});
+        } catch (error) {
+            console.error("Logout error:", error);
+        } finally {
+            clearToken();
+            clearId();
+            router.push("/login");
+        }
+    };
+
     const addQuestion = () =>
         setQuestions((prev) => [...prev, emptyQuestion()]);
 
@@ -198,6 +245,7 @@ const Quiz: React.FC = () => {
 
     const isQuizValid =
         quizTitle.trim() !== "" &&
+        selectedBook !== null &&
         questions.some(
             (q) =>
                 q.text.trim() !== "" &&
@@ -210,14 +258,13 @@ const Quiz: React.FC = () => {
         ["A", "B", "C", "D"].indexOf(label) + 1;
 
     const handleSend = async () => {
-        if (!isQuizValid || isSubmitting) return;
+        if (!isQuizValid || isSubmitting || !selectedBook) return;
         setIsSubmitting(true);
-
         try {
             const quizPayload = {
                 title: quizTitle,
                 difficulty: difficulty.toUpperCase(),
-                bookId: SELECTED_BOOK.id,
+                bookId: selectedBook.id,
                 questions: questions
                     .filter(
                         (q) =>
@@ -240,29 +287,31 @@ const Quiz: React.FC = () => {
                 quizPayload
             ) as { id: number };
 
-            const quizId = createdQuiz.id;
-
             await apiService.post(
-                `/users/${userId}/quizzes/${quizId}/send`,
+                `/users/${userId}/quizzes/${createdQuiz.id}/send`,
                 { friendIds: selectedFriends }
             );
+
             toast.success("Quiz created and sent to your friends!");
+
+            try {
+                const fresh = await apiService.get<MyQuizSummaryDTO>(`/users/${userId}/quizzes/latest`);
+                setMyQuiz(fresh ?? null);
+            } catch {
+                // not critical
+            }
 
             setQuizTitle("");
             setDifficulty("Easy");
             setQuestions([emptyQuestion()]);
             setSelectedFriends([]);
+            setSelectedBook(null);
         } catch (error) {
             console.error("Failed to send quiz:", error);
             toast.error("Something went wrong. Please try again.");
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const scorePercent = (score: string) => {
-        const [got, total] = score.split("/").map(Number);
-        return Math.round((got / total) * 100);
     };
 
     if (!isAuthorized) {
@@ -277,28 +326,253 @@ const Quiz: React.FC = () => {
             <div className="quiz-main">
                 <div className="quiz-content">
 
-                    {/* Create Quiz */}
+                    <div className="quiz-bottom-row">
+                        <div className="quiz-challenges-col">
+                            <h2 className="quiz-section-title">Challenges from friends</h2>
+                            <div className="quiz-challenges-list">
+                                {challenges.length === 0 ? (
+                                    <div className="quiz-challenge-card">
+                                        <div className="quiz-lb-empty">No challenges yet.</div>
+                                    </div>
+                                ) : (
+                                    challenges.map((c) => (
+                                        <div key={c.id} className="quiz-challenge-card">
+                                            <div className="quiz-challenge-header">
+                                                <div
+                                                    className="quiz-friend-avatar sm"
+                                                    style={{ background: AVATAR_COLORS[c.id % AVATAR_COLORS.length] }}
+                                                >
+                                                    {c.message?.[0]?.toUpperCase() ?? "?"}
+                                                </div>
+                                                <span className="quiz-challenge-from">{c.message}</span>
+                                                <span className="quiz-challenge-time">
+                                                    {new Date(c.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            <div className="quiz-challenge-actions">
+                                                <button className="quiz-accept-btn">Accept and Start Quiz</button>
+                                                <button className="quiz-decline-btn">Decline</button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="quiz-lb-col">
+                            <h2 className="quiz-section-title">Leaderboard</h2>
+                            <div className="quiz-lb-card">
+                                {quizLeaderboard.length === 0 ? (
+                                    <div className="quiz-lb-empty">No quiz points yet.</div>
+                                ) : (
+                                    quizLeaderboard.map((r, i) => (
+                                        <div key={r.id ?? i} className="quiz-lb-row">
+                                            <span className="quiz-lb-rank">{i + 1}</span>
+                                            <div
+                                                className="quiz-friend-avatar sm"
+                                                style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                                            >
+                                                {r.username?.[0]?.toUpperCase() ?? "?"}
+                                            </div>
+                                            <span className="quiz-lb-name">{r.username ?? "Unknown"}</span>
+                                            <span className="quiz-lb-points">{r.quizPoints ?? 0} points</span>
+                                        </div>
+                                    ))
+                                )}
+                                {(() => {
+                                    if (!userId) return null;
+                                    const myEntry = quizLeaderboard.find((r) => r.id === Number(userId));
+                                    const myRank  = myEntry
+                                        ? quizLeaderboard.findIndex((r) => r.id === Number(userId)) + 1
+                                        : null;
+                                    return (
+                                        <>
+                                            <div className="quiz-lb-dots">···</div>
+                                            <div className="quiz-lb-row self">
+                                                <span className="quiz-lb-rank">{myRank ?? "–"}</span>
+                                                <div className="quiz-friend-avatar sm" style={{ background: "#7a6e5e" }}>
+                                                    {String(userId)[0].toUpperCase()}
+                                                </div>
+                                                <span className="quiz-lb-name" style={{ fontWeight: 700 }}>You</span>
+                                                <span className="quiz-lb-points">{myEntry?.quizPoints ?? 0} points</span>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+
+                    <section>
+                        <h2 className="quiz-section-title">My quizzes</h2>
+
+                        {myQuizLoading ? (
+                            <div className="quiz-my-card quiz-my-card--skeleton">
+                                <div className="quiz-my-header">
+                                    <div className="quiz-my-cover" style={{ background: "var(--color-surface-offset, #e8e6e1)" }} />
+                                    <div className="quiz-my-info" style={{ flex: 1 }}>
+                                        <div className="quiz-skeleton-line" style={{ width: "55%", height: "1em", marginBottom: 6 }} />
+                                        <div className="quiz-skeleton-line" style={{ width: "35%", height: ".8em", marginBottom: 10 }} />
+                                        <div className="quiz-skeleton-line" style={{ width: "25%", height: "1.4em", borderRadius: 999 }} />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : !isValidQuiz(myQuiz) ? (
+                            <div className="quiz-my-card">
+                                <p className="quiz-lb-empty">
+                                    You haven&apos;t created any quizzes yet. Make your first one below!
+                                </p>
+                            </div>
+                        ) : (
+                            <div key={myQuiz.id} className="quiz-my-card">
+                                <div className="quiz-my-header">
+                                    <div className="quiz-my-cover" style={{ background: "#2a6a3a" }} />
+                                    <div className="quiz-my-info">
+                                        <div className="quiz-my-title">{myQuiz.title}</div>
+                                        <div className="quiz-my-meta">Book #{myQuiz.bookId}</div>
+                                        <div className="quiz-my-tags">
+                                            <span className={`quiz-diff-badge quiz-diff-${(myQuiz.difficulty ?? "easy").toLowerCase()}`}>
+                                                {myQuiz.difficulty
+                                                    ? myQuiz.difficulty.charAt(0).toUpperCase() + myQuiz.difficulty.slice(1).toLowerCase()
+                                                    : "Unknown"}
+                                            </span>
+                                            <span className="quiz-my-qcount">
+                                                {myQuiz.questionCount} question{myQuiz.questionCount !== 1 ? "s" : ""}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span className="quiz-my-time">{relativeTime(myQuiz.createdAt)}</span>
+                                </div>
+                                <div className="quiz-my-results">
+                                    {(myQuiz.results ?? []).map((r) => (
+                                        <div key={r.userId} className="quiz-my-result-row">
+                                            <div
+                                                className="quiz-friend-avatar sm"
+                                                style={{ background: avatarColor(r.username) }}
+                                            >
+                                                {r.username?.[0] ?? "?"}
+                                            </div>
+                                            <span className="quiz-my-result-name">{r.username}</span>
+                                            {r.pending ? (
+                                                <span className="quiz-my-pending">pending</span>
+                                            ) : (
+                                                <>
+                                                    <div className="quiz-my-bar-track">
+                                                        <div
+                                                            className="quiz-my-bar-fill"
+                                                            style={{
+                                                                width: `${Math.round(((r.scoreGot ?? 0) / r.scoreTotal) * 100)}%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span className="quiz-my-score">{r.scoreGot}/{r.scoreTotal}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+
                     <section className="quiz-section">
                         <h1 className="quiz-page-title">Create Quiz</h1>
                         <p className="quiz-page-subtitle">
                             Write questions about books and challenge your friends to answer them!
                         </p>
 
-                        <div className="quiz-book-pill">
-                            <div className="quiz-book-cover" style={{ background: SELECTED_BOOK.coverColor }} />
-                            <div>
-                                <div className="quiz-book-pill-label">Quiz About</div>
-                                <div className="quiz-book-pill-title">{SELECTED_BOOK.title}</div>
-                                <div className="quiz-book-pill-author">{SELECTED_BOOK.author}</div>
-                            </div>
+                        <div className="quiz-book-picker">
+                            <button
+                                className="quiz-book-pick-btn"
+                                onClick={() => setBookModalOpen(true)}
+                            >
+                                {selectedBook ? (
+                                    <>
+                                        {selectedBook.coverUrl ? (
+                                            <img
+                                                src={selectedBook.coverUrl}
+                                                alt={selectedBook.name}
+                                                className="quiz-pick-btn-cover"
+                                            />
+                                        ) : (
+                                            <div className="quiz-pick-btn-cover quiz-pick-btn-cover-placeholder" />
+                                        )}
+                                        <div className="quiz-pick-btn-info">
+                                            <span className="quiz-pick-btn-label">Quiz about</span>
+                                            <span className="quiz-pick-btn-title">{selectedBook.name}</span>
+                                            {selectedBook.authors && (
+                                                <span className="quiz-pick-btn-author">{selectedBook.authors}</span>
+                                            )}
+                                        </div>
+                                        <span className="quiz-pick-btn-change">Change</span>
+                                    </>
+                                ) : (
+                                    <span className="quiz-pick-btn-empty">+ Choose a book from your shelves</span>
+                                )}
+                            </button>
                         </div>
+
+                        {bookModalOpen && (
+                            <div className="quiz-modal-overlay" onClick={() => setBookModalOpen(false)}>
+                                <div className="quiz-modal" onClick={(e) => e.stopPropagation()}>
+                                    <div className="quiz-modal-header">
+                                        <span className="quiz-modal-title">Choose a book</span>
+                                        <button className="quiz-modal-close" onClick={() => setBookModalOpen(false)}>×</button>
+                                    </div>
+                                    <div className="quiz-modal-tabs">
+                                        {shelves.map((shelf) => (
+                                            <button
+                                                key={shelf.id}
+                                                className={`quiz-modal-tab ${shelf.id === selectedShelfId ? "active" : ""}`}
+                                                onClick={() => setSelectedShelfId(shelf.id)}
+                                            >
+                                                {shelf.name}
+                                                <span className="quiz-modal-tab-count">{shelf.shelfBooks.length}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="quiz-modal-books">
+                                        {shelfBooks.length === 0 ? (
+                                            <div className="quiz-modal-empty">No books on this shelf yet.</div>
+                                        ) : (
+                                            shelfBooks.map((book) => (
+                                                <div
+                                                    key={book.id}
+                                                    className={`quiz-modal-book-row ${selectedBook?.id === book.id ? "selected" : ""}`}
+                                                    onClick={() => { setSelectedBook(book); setBookModalOpen(false); }}
+                                                >
+                                                    <div className="quiz-modal-book-cover">
+                                                        {book.coverUrl ? (
+                                                            <img src={book.coverUrl} alt={book.name} className="quiz-modal-book-cover-img" />
+                                                        ) : (
+                                                            <div className="quiz-modal-book-cover-placeholder">
+                                                                {book.name.split(" ").slice(0, 2).join(" ")}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="quiz-modal-book-info">
+                                                        <span className="quiz-modal-book-title">{book.name}</span>
+                                                        {book.authors && (
+                                                            <span className="quiz-modal-book-author">{book.authors}</span>
+                                                        )}
+                                                    </div>
+                                                    {selectedBook?.id === book.id && (
+                                                        <span className="quiz-modal-book-check">✓</span>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="quiz-meta-row">
                             <div className="quiz-field">
                                 <label className="quiz-field-label">Quiz Title</label>
                                 <input
                                     className="quiz-input"
-                                    placeholder="e.g. How well do you know Wuthering Heights?"
+                                    placeholder="e.g. How well do you know this book?"
                                     value={quizTitle}
                                     onChange={(e) => setQuizTitle(e.target.value)}
                                 />
@@ -322,12 +596,7 @@ const Quiz: React.FC = () => {
                         {questions.map((q, qIdx) => (
                             <div key={q.id} className="quiz-question-card">
                                 {qIdx > 0 && (
-                                    <button
-                                        className="quiz-delete-question-btn"
-                                        onClick={() => removeQuestion(qIdx)}
-                                    >
-                                        ×
-                                    </button>
+                                    <button className="quiz-delete-question-btn" onClick={() => removeQuestion(qIdx)}>×</button>
                                 )}
                                 <div className="quiz-question-label">Question {qIdx + 1}</div>
                                 <input
@@ -399,7 +668,7 @@ const Quiz: React.FC = () => {
                                 title={
                                     isQuizValid
                                         ? "Send quiz to selected friends"
-                                        : "Please fill out the quiz and select at least one friend"
+                                        : "Please fill out the quiz, select a book, and select at least one friend"
                                 }
                                 disabled={!isQuizValid || isSubmitting}
                                 onClick={handleSend}
@@ -408,131 +677,6 @@ const Quiz: React.FC = () => {
                             </button>
                         </div>
                     </section>
-
-                    {/* Challenges + Leaderboard */}
-                    <div className="quiz-bottom-row">
-                        <div className="quiz-challenges-col">
-                            <h2 className="quiz-section-title">Challenges from friends</h2>
-                            <div className="quiz-challenges-list">
-                                {challenges.length === 0 ? (
-                                    <div className="quiz-challenge-card">
-                                        <div className="quiz-lb-empty">No challenges yet.</div>
-                                    </div>
-                                ) : (
-                                    challenges.map((c) => (
-                                        <div key={c.id} className="quiz-challenge-card">
-                                            <div className="quiz-challenge-header">
-                                                <div
-                                                    className="quiz-friend-avatar sm"
-                                                    style={{ background: AVATAR_COLORS[c.id % AVATAR_COLORS.length] }}
-                                                >
-                                                    {c.message?.[0]?.toUpperCase() ?? "?"}
-                                                </div>
-                                                <span className="quiz-challenge-from">{c.message}</span>
-                                                <span className="quiz-challenge-time">
-                                                    {new Date(c.createdAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <div className="quiz-challenge-actions">
-                                                <button className="quiz-accept-btn">Accept and Start Quiz</button>
-                                                <button className="quiz-decline-btn">Decline</button>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="quiz-lb-col">
-                            <h2 className="quiz-section-title">Leaderboard</h2>
-                            <div className="quiz-lb-card">
-                                {quizLeaderboard.length === 0 ? (
-                                    <div className="quiz-lb-empty">No quiz points yet.</div>
-                                ) : (
-                                    quizLeaderboard.map((r, i) => (
-                                        <div key={r.id ?? i} className="quiz-lb-row">
-                                            <span className="quiz-lb-rank">{i + 1}</span>
-                                            <div
-                                                className="quiz-friend-avatar sm"
-                                                style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
-                                            >
-                                                {r.username?.[0]?.toUpperCase() ?? "?"}
-                                            </div>
-                                            <span className="quiz-lb-name">{r.username ?? "Unknown"}</span>
-                                            <span className="quiz-lb-points">{r.quizPoints ?? 0} points</span>
-                                        </div>
-                                    ))
-                                )}
-                                {(() => {
-                                    if (!userId) return null;
-                                    const myEntry = quizLeaderboard.find((r) => r.id === Number(userId));
-                                    const myRank = myEntry
-                                        ? quizLeaderboard.findIndex((r) => r.id === Number(userId)) + 1
-                                        : null;
-                                    return (
-                                        <>
-                                            <div className="quiz-lb-dots">···</div>
-                                            <div className="quiz-lb-row self">
-                                                <span className="quiz-lb-rank">{myRank ?? "–"}</span>
-                                                <div className="quiz-friend-avatar sm" style={{ background: "#7a6e5e" }}>
-                                                    {String(userId)[0].toUpperCase()}
-                                                </div>
-                                                <span className="quiz-lb-name" style={{ fontWeight: 700 }}>You</span>
-                                                <span className="quiz-lb-points">{myEntry?.quizPoints ?? 0} points</span>
-                                            </div>
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* My Quizzes */}
-                    <section>
-                        <h2 className="quiz-section-title">My quizzes</h2>
-                        {MY_QUIZZES.map((q) => (
-                            <div key={q.id} className="quiz-my-card">
-                                <div className="quiz-my-header">
-                                    <div className="quiz-my-cover" style={{ background: q.coverColor }} />
-                                    <div className="quiz-my-info">
-                                        <div className="quiz-my-title">{q.title}</div>
-                                        <div className="quiz-my-meta">{q.book} · {q.author}</div>
-                                        <div className="quiz-my-tags">
-                                            <span className={`quiz-diff-badge quiz-diff-${q.difficulty.toLowerCase()}`}>
-                                                {q.difficulty}
-                                            </span>
-                                            <span className="quiz-my-qcount">{q.questionCount} questions</span>
-                                        </div>
-                                    </div>
-                                    <span className="quiz-my-time">{q.timeAgo}</span>
-                                </div>
-                                <div className="quiz-my-results">
-                                    {q.results.map((r) => (
-                                        <div key={r.name} className="quiz-my-result-row">
-                                            <div className="quiz-friend-avatar sm" style={{ background: r.color }}>
-                                                {r.name?.[0] ?? "?"}
-                                            </div>
-                                            <span className="quiz-my-result-name">{r.name}</span>
-                                            {r.pending ? (
-                                                <span className="quiz-my-pending">pending</span>
-                                            ) : (
-                                                <>
-                                                    <div className="quiz-my-bar-track">
-                                                        <div
-                                                            className="quiz-my-bar-fill"
-                                                            style={{ width: `${scorePercent(r.score)}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="quiz-my-score">{r.score}</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </section>
-
                 </div>
             </div>
             <ToastContainer position="top-center" />
