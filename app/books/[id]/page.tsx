@@ -10,6 +10,7 @@ import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
 import { toast, ToastContainer } from "react-toastify";
 import { Review } from "@/types/review";
+import "@/styles/library.css";
 
 interface Book {
   id: number;
@@ -218,43 +219,53 @@ const Book: React.FC = () => {
               initialReview={myReview?.review}
             />
 
-            <div style={{ marginTop: 30 }}>
-              <h3>Reviews</h3>
+            <div className="bottom-card" style={{ marginTop: 30 }}>
+            <div className="bottom-card-title">Reviews</div>
 
-              {/* My Review */}
               {myReview && (
-                <div key={myReview.id} style={{
-                  borderBottom: "1px solid #eee",
-                  padding: "12px 0",
-                  background: "#f9f9f9"
+                <div key={myReview.id}  style={{
+                  border: "1px solid #e0d8cc",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  background: "#f9f9f9",
+                  marginBottom: "12px"
                 }}>
-                  <p><b> {myReview.username}</b> {"★".repeat(myReview.rating)}{"☆".repeat(5 - myReview.rating)}</p>
-                  <p>{myReview.review}</p>
-                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <Button size="small" onClick={() => setEditModalOpen(true)}>Edit</Button>
-                      <Button size="small" danger onClick={handleDeleteReview}>Delete</Button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <p style={{ margin: 0 }}>
+                      <b>{myReview.username}</b>{" "}
+                      <span style={{ color: "#3a6b2a" }}>(you)</span>{" "}
+                      <span style={{ color: "#fadb14" }}>{"★".repeat(myReview.rating)}</span>{"☆".repeat(5 - myReview.rating)}
+                    </p>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                      <button className="edit-bookshelf-btn" onClick={() => setEditModalOpen(true)}>Edit</button>
+                      <button className="delete-bookshelf-btn" style={{ position: "static" }} onClick={handleDeleteReview}>Delete Review</button>
                     </div>
+                  </div>
+                  <p>{myReview.review}</p>
+                  <div className="friend-time">
+                     {new Date(myReview.timestamp).toLocaleString()}
+                  </div>
                 </div>
               )}
 
-              {/* Other Reviews */}
               {otherReviews
                 .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                 .map((r) => (
-                <div key={r.id} style={{
-                  borderBottom: "1px solid #eee",
-                  padding: "12px 0"
-                }}>
-                  <p><b>{r.username}</b> {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</p>
-                  <p>{r.review}</p>
-                </div>
+                 <div key={r.id} style={{
+                    borderBottom: "1px solid #eee",
+                    padding: "12px 0"
+                  }}>
+                    <p><b>{r.username}</b> <span style={{ color: "#fadb14" }}>{"★".repeat(r.rating)}</span>{"☆".repeat(5 - r.rating)}</p>
+                    <p>{r.review}</p>
+                    <div className="friend-time">
+                        {new Date(r.timestamp).toLocaleString()}
+                    </div>
+                  </div>
               ))}
 
               {/* No reviews yet — only when neither exists */}
               {!myReview && otherReviews.length === 0 && (
-                <p style={{ color: "#999", fontStyle: "italic" }}>
-                  No reviews yet, be the first!
-                </p>
+                <div className="shelf-empty"> No reviews yet, be the first!</div>
               )}
             </div>
 

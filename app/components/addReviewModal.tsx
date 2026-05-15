@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Input } from "antd";
+import { Modal, Input, Tooltip } from "antd";
 
 interface AddReviewModalProps {
   open: boolean;
@@ -56,7 +56,6 @@ const AddReviewModal: React.FC<AddReviewModalProps> = ({
             </span>
           ))}
         </div>
-        {rating === 0 && <p style={{ color: "red", fontSize: 12 }}>Please select a rating</p>}
       </div>
 
       {/* Review Text */}
@@ -66,16 +65,20 @@ const AddReviewModal: React.FC<AddReviewModalProps> = ({
           rows={4}
           value={reviewText}
           onChange={(e) => setReviewText(e.target.value)}
-          placeholder="Write your review here..."
+          placeholder="Write your review here."
         />
       </div>
 
       {/* Buttons */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button type="primary" onClick={handleSubmit} disabled={rating === 0}>
-          {initialRating ? "Save" : "Submit"}
-        </Button>
+       <div className="modal-actions">
+        <Tooltip title={rating === 0 ? "Select a star rating, please!" : ""}>
+          <span>
+            <button className="primary-btn" onClick={handleSubmit} disabled={rating === 0}>
+              {initialRating ? "Save" : "Save"}
+            </button>
+          </span>
+        </Tooltip>
+        <button className="primary-btn" onClick={onClose}>Cancel</button>
       </div>
     </Modal>
   );
