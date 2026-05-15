@@ -578,13 +578,29 @@
 }
 
 .quiz-my-cover {
-    width: 56px;
-    height: 72px;
-    border-radius: 4px;
+    width: 80px;
+    height: 110px;
     flex-shrink: 0;
-}
+    overflow: hidden;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e8e6e1;
+  }
 
-.quiz-my-info { flex: 1; }
+  .quiz-my-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+.quiz-my-info {
+    flex: 1;
+    min-width: 0; 
+    overflow: hidden;
+}
 
 .quiz-my-title {
     font-size: 16px;
@@ -925,4 +941,45 @@
     font-size: 16px;
     font-weight: 700;
     flex-shrink: 0;
+}
+
+/* PlayQuiz.module.css */
+
+.pageWrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 7%;
+    padding-left: 10%;
+    background: #f6f1e8;
+}
+
+.card {
+    width: 500px;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.option {
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid #ccc;
+    background: #fff;
+}
+
+.optionSelected {
+    border: 2px solid #2e7d32;
+    background: #e8f5e9;
 }

@@ -39,6 +39,7 @@ const SharedReadingSession: React.FC = () => {
     const [shelves, setShelves] = useState<Shelf[]>([]);
     const [friends, setFriends] = useState<User[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
+    const [showBookModal, setShowBookModal] = useState(false);
 
     // Timer — shared session means everyone's timer ticks together
     const [seconds, setSeconds] = useState(0);
@@ -149,6 +150,12 @@ const SharedReadingSession: React.FC = () => {
                 break;
         }
     }, [notificationQueue, popNotification]);
+
+    useEffect(() => {
+        if (sessionId) {
+            setShowBookModal(true);
+        }
+    }, [sessionId]);
 
     const formatTime = (s: number) => {
         const h = Math.floor(s / 3600);
@@ -340,7 +347,7 @@ const SharedReadingSession: React.FC = () => {
                                 >
                                     Start Shared Session
                                 </Button>
-                                {sessionId && (
+                                {sessionId && showBookModal &&(
                                     <SelectBookModal
                                         sessionId={sessionId}
                                         userId={userId}
@@ -359,7 +366,10 @@ const SharedReadingSession: React.FC = () => {
                                             
                                             setActiveParticipants(actives)
                                             await handleStartSession(book);
+
                                         }}
+                                        onClose={() => setShowBookModal(false)}
+                                        
                                     />
                                 )}
                                 

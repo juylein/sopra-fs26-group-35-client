@@ -116,6 +116,7 @@ const Quiz: React.FC = () => {
     const [shelves, setShelves]                 = useState<Shelf[]>([]);
     const [selectedBook, setSelectedBook]       = useState<Book | null>(null);
     const [selectedShelfId, setSelectedShelfId] = useState<number | null>(null);
+    const [booksMap, setBooksMap] = useState<Record<number, Book>>({});
 
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const shelfBooks    = selectedShelf?.shelfBooks.map((sb) => sb.book) ?? [];
@@ -200,6 +201,27 @@ const Quiz: React.FC = () => {
         fetchLatestQuiz();
     }, [apiService, userId]);
 
+    useEffect(() => {
+        const fetchBook = async () => {
+            if (!userId || !myQuiz?.bookId) return;
+    
+            try {
+                const book = await apiService.get<Book>(
+                    `/books/${myQuiz.bookId}`
+                );
+    
+                setBooksMap({
+                    [book.id]: book,
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        };
+    
+        fetchBook();
+    }, [myQuiz, userId]);
+
+
     const handleLogout = async (): Promise<void> => {
         try {
             if (!userId) { router.push("/login"); return; }
@@ -263,7 +285,7 @@ const Quiz: React.FC = () => {
         try {
             const quizPayload = {
                 title: quizTitle,
-                difficulty: difficulty.toUpperCase(),
+                difficulty: difficulty.trim().toUpperCase(),
                 bookId: selectedBook.id,
                 questions: questions
                     .filter(
@@ -281,6 +303,7 @@ const Quiz: React.FC = () => {
                         correctOption: answerLabelToIndex(q.answer),
                     })),
             };
+
 
             const createdQuiz = await apiService.post(
                 `/users/${userId}/quizzes`,
@@ -350,7 +373,25 @@ const Quiz: React.FC = () => {
                                                 </span>
                                             </div>
                                             <div className="quiz-challenge-actions">
-                                                <button className="quiz-accept-btn">Accept and Start Quiz</button>
+                                            <button
+                                            className="quiz-accept-btn"
+                                            onClick={async () => {
+                                                try {
+                                                    if (!userId) return;
+
+                                                    await apiService.put(
+                                                        `/users/${userId}/quizzes/${c.referenceId}/accept`,
+                                                        {}
+                                                    );
+
+                                                    router.push(`/quiz/play/${c.referenceId}`);
+                                                } catch (error) {
+                                                    handleErrorMessage(error);
+                                                }
+                                            }}
+                                        >
+                                            Accept and Start Quiz
+                                        </button>
                                                 <button className="quiz-decline-btn">Decline</button>
                                             </div>
                                         </div>
@@ -426,10 +467,21 @@ const Quiz: React.FC = () => {
                         ) : (
                             <div key={myQuiz.id} className="quiz-my-card">
                                 <div className="quiz-my-header">
-                                    <div className="quiz-my-cover" style={{ background: "#2a6a3a" }} />
+                                <div className="quiz-my-cover">
+                                    {booksMap[myQuiz.bookId ?? 0]?.coverUrl ? (
+                                        <img
+                                            src={booksMap[myQuiz.bookId!].coverUrl!}
+                                            alt="cover"
+                                        />
+                                    ) : (
+                                        <div className="quiz-my-cover-placeholder" />
+                                    )}
+                                </div>
                                     <div className="quiz-my-info">
                                         <div className="quiz-my-title">{myQuiz.title}</div>
-                                        <div className="quiz-my-meta">Book #{myQuiz.bookId}</div>
+                                        <div className="quiz-my-meta">
+                                            {booksMap[myQuiz.bookId ?? 0]?.name ?? `Book #${myQuiz.bookId}`}
+                                        </div>
                                         <div className="quiz-my-tags">
                                             <span className={`quiz-diff-badge quiz-diff-${(myQuiz.difficulty ?? "easy").toLowerCase()}`}>
                                                 {myQuiz.difficulty
