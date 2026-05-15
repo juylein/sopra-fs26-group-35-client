@@ -1,5 +1,6 @@
 "use client";
 
+import AddReviewModal from "@/components/addReviewModal";
 import React, { useEffect, useState } from "react";
 import TopBar from "@/components/topbar";
 import { useRouter, useParams } from "next/navigation";
@@ -8,6 +9,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
 import { toast, ToastContainer } from "react-toastify";
+import { Review } from "@/types/review";
 
 interface Book {
   id: number;
@@ -19,6 +21,7 @@ interface Book {
   genre: string | null;
   description: string | null;
   coverUrl: string | null;
+  reviews: Review[] | null;
 }
 
 const Book: React.FC = () => {
@@ -28,8 +31,13 @@ const Book: React.FC = () => {
 
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
+
+  const myReview = book?.reviews?.find((r) => r.userId === Number(userId)) ?? null;
+  const otherReviews = book?.reviews?.filter((r) => r.userId !== Number(userId)) ?? [];
 
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -50,6 +58,46 @@ const Book: React.FC = () => {
     router.push(`/session/`);
   } ;
 
+  const handleReviewSubmission = async (rating: number, review: string) => {
+    try {
+      await apiService.post(`/books/${id}/reviews`, { rating, review });
+      toast.success("Review added!");
+    } catch (error) {
+      toast.error("Failed to add review.");
+    }
+    try {
+      const data = await apiService.get<Book>(`/books/${id}`);
+      setBook(data);
+    } catch (error) {
+      console.error("Failed to fetch book:", error);
+    }
+  };
+  
+ const handleDeleteReview = async () => {
+  try {
+    await apiService.delete(`/users/${userId}/reviews/${myReview?.id}`);
+    toast.success("Review deleted!");
+    const data = await apiService.get<Book>(`/books/${id}`);
+    setBook(data);
+  } catch (error) {
+    toast.error("Failed to delete review.");
+  }
+};
+
+  const handleEditReview = async (rating: number, review: string) => {
+  try {
+    await apiService.put(`/users/${userId}/reviews/${myReview?.id}`, { rating, review });
+    setBook((prev) => prev ? {
+      ...prev,
+      reviews: (prev.reviews ?? []).map((r) => 
+        r.id === myReview?.id ? { ...r, rating, review } : r
+      )
+    } : null);
+    toast.success("Review updated!");
+  } catch (error) {
+    toast.error("Failed to update review.");
+  }
+};
   useEffect(() => {
     if (!localStorage.getItem("token")) {
       toast.error("You need to be logged in to access this page.", {
@@ -75,7 +123,7 @@ const Book: React.FC = () => {
       }
     };
 
-    fetchBook();
+    fetchBook();  
   }, [id, apiService]);
 
   if (!isAuthorized) {
@@ -91,6 +139,7 @@ const Book: React.FC = () => {
   }
 
   return (
+    
     <div className="library-container">
       <Sidebar />
       <TopBar onLogout={handleLogout} />
@@ -149,8 +198,70 @@ const Book: React.FC = () => {
   
             <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
               <Button className="discover-read-btn" onClick={startReading}>Start Reading  </Button>
-              <Button className="discover-read-btn">Add review </Button>
+              <Button className="discover-read-btn" onClick={() => setReviewModalOpen(true)} disabled={!!myReview}
+              >
+                {myReview ? "Already reviewed" : "Add review"}
+              </Button> 
             </div>
+
+            <AddReviewModal
+              open={reviewModalOpen}
+              onClose={() => setReviewModalOpen(false)}
+              onSubmit={handleReviewSubmission}
+            />
+
+            <AddReviewModal
+              open={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              onSubmit={handleEditReview}
+              initialRating={myReview?.rating}
+              initialReview={myReview?.review}
+            />
+
+            <div style={{ marginTop: 30 }}>
+              <h3>Reviews</h3>
+
+              {/* My Review */}
+              {myReview && (
+                <div key={myReview.id} style={{
+                  borderBottom: "1px solid #eee",
+                  padding: "12px 0",
+                  background: "#f9f9f9"
+                }}>
+                  <p><b> {myReview.username}</b> {"★".repeat(myReview.rating)}{"☆".repeat(5 - myReview.rating)}</p>
+                  <p>{myReview.review}</p>
+                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                      <Button size="small" onClick={() => setEditModalOpen(true)}>Edit</Button>
+                      <Button size="small" danger onClick={handleDeleteReview}>Delete</Button>
+                    </div>
+                </div>
+              )}
+
+              {/* Other Reviews */}
+              {otherReviews
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .map((r) => (
+                <div key={r.id} style={{
+                  borderBottom: "1px solid #eee",
+                  padding: "12px 0"
+                }}>
+                  <p><b>{r.username}</b> {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</p>
+                  <p>{r.review}</p>
+                </div>
+              ))}
+
+              {/* No reviews yet — only when neither exists */}
+              {!myReview && otherReviews.length === 0 && (
+                <p style={{ color: "#999", fontStyle: "italic" }}>
+                  No reviews yet, be the first!
+                </p>
+              )}
+            </div>
+
+
+
+
+
           </div>
   
         </div>
