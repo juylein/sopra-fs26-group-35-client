@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import { Button } from "antd";
+import { Button,Modal } from "antd";
 import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
@@ -32,6 +32,8 @@ const ReadingSessionComponent = () => {
     const [startPage, setStartPage] = useState<number>(0);
     const [seconds, setSeconds] = useState(0);
     const [running, setRunning] = useState(false);
+    const[closeSession,setCloseSession] = useState(false);
+    const[isModalOpen,setIsModalOpen] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState(false);
 
     const handleLogout = async (): Promise<void> => {
@@ -130,6 +132,19 @@ const ReadingSessionComponent = () => {
         } catch {
             toast.error("Failed creating session");
         }
+    };
+
+    const openFinishModal = () => {
+        setIsModalOpen(true);
+    };
+    
+    const handleCancelFinish = () => {
+        setIsModalOpen(false);
+    };
+    
+    const handleConfirmFinish = async () => {
+        setIsModalOpen(false);
+        await handleFinishSession();
     };
 
     const handleFinishSession = async () => {
@@ -306,7 +321,7 @@ const ReadingSessionComponent = () => {
                             <div className="session-finish-row">
                                 <Button
                                     className="bookshelf-session-btn-pause session-finish-btn"
-                                    onClick={handleFinishSession}
+                                    onClick={openFinishModal}
                                 >
                                     Finish &amp; Log Session
                                 </Button>
@@ -315,6 +330,26 @@ const ReadingSessionComponent = () => {
                     )}
                 </div>
             </div>
+            <Modal
+           title="Leave session?"
+           open={isModalOpen}
+           onCancel={handleCancelFinish}
+            footer={[
+                <Button key="cancel" onClick={handleCancelFinish}>
+                    Cancel
+                </Button>,
+                <Button
+                    key="confirm"
+                    type="primary"
+                    danger
+                    onClick={handleConfirmFinish}
+                >
+                    Yes, finish session
+                </Button>,
+            ]}
+>
+    <p>Are you sure you want to leave this reading session?</p>
+</Modal>
             <ToastContainer position="top-center" />
         </div>
     );

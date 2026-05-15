@@ -63,6 +63,7 @@ const Dashboard: React.FC = () => {
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
     const { handleErrorMessage } = useHandleErrorMessage();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Shelves state
     const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -113,6 +114,7 @@ const Dashboard: React.FC = () => {
 
     // Fetch shelves on component mount
     useEffect(() => {
+        if (isLoggingOut) return;
         const fetchShelves = async () => {
             if (!id) return;
 
@@ -133,6 +135,7 @@ const Dashboard: React.FC = () => {
     }, [apiService, userId]);
 
     useEffect(() => {
+        if (isLoggingOut) return;
         const fetchLatest = async () => {
             try {
                 const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null }>(
@@ -167,6 +170,7 @@ const Dashboard: React.FC = () => {
     };
 
     useEffect(() => {
+        if (isLoggingOut) return;
         const getLeaderboard = async () => {
             try {
                 const data = await apiService.get<UserStats[]>(`/users/leaderboard`);
@@ -180,6 +184,7 @@ const Dashboard: React.FC = () => {
     }, [apiService]);
 
     useEffect(() => {
+        if (isLoggingOut) return;
         const fetchActivities = async () => {
             if (!userId) return;
     
@@ -202,6 +207,7 @@ const Dashboard: React.FC = () => {
     };
 
     const handleLogout = async (): Promise<void> => {
+        setIsLoggingOut(true);
         try {
             if (!userId) {
                 router.push("/login");
