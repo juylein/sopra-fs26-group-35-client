@@ -35,6 +35,7 @@ const Friends: React.FC = () => {
   const [suggestions, setSuggestions] = useState<User[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const suggestionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -196,15 +197,19 @@ const Friends: React.FC = () => {
                       const val = e.target.value;
                       setSearchValue(val);
                       if (!val.trim()) { setSuggestions([]); return; }
-                      setSuggestionsLoading(true);
-                      try {
-                        const user = await apiService.get<User>(`/users/friends/${val.trim()}`);
-                        setSuggestions(user?.id ? [user] : []);
-                      } catch {
-                        setSuggestions([]);
-                      } finally {
-                        setSuggestionsLoading(false);
-                      }
+
+                      if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+                      suggestionTimeoutRef.current = setTimeout(async () => {
+                        setSuggestionsLoading(true);
+                        try {
+                          const results = await apiService.get<User[]>(`/users/search?query=${encodeURIComponent(val.trim())}`);
+                          setSuggestions(results ?? []);
+                        } catch {
+                          setSuggestions([]);
+                        } finally {
+                          setSuggestionsLoading(false);
+                        }
+                      }, 400);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
