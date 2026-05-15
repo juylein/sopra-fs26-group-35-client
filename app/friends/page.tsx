@@ -54,10 +54,7 @@ const Friends: React.FC = () => {
     try {
       const friend = await apiService.get<User>(`/users/friends/${username}`);
       if (!friend?.id) {
-        toast.error("User not found", {
-          className: "session-toast",
-          progressClassName: "session-toast-progress",
-        });
+        toast.error("User not found");
         return;
       }
 

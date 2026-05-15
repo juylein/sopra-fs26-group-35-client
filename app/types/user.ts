@@ -3,10 +3,9 @@ export interface User {
   name: string | null;
   username: string | null;
   token: string | null;
-  status: string | null;
+  status: "ONLINE" | "OFFLINE";
   bio: string | null;
   creationDate: string | null;
   genres: string[] | null;
   friends: User[] | null;
-  online: boolean | null;
 }

@@ -4,6 +4,7 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@/styles/globals.css";
 import { Philosopher } from "next/font/google";
 import "@/styles/dashboard.css";
+import { NotificationProvider } from "./components/context/notificationProvider";
 
 export const metadata: Metadata = {
   title: "bookshelf",
@@ -24,6 +25,9 @@ export default function RootLayout({
 }>) {
   return (
       <html lang="en" className={philosopher.variable}>
+      <head>
+          <link rel="preconnect" href="https://www.googleapis.com" />
+      </head>
       <body>
       <ConfigProvider
           theme={{
@@ -59,7 +63,11 @@ export default function RootLayout({
           }}
       >
         <AntdRegistry>
-          <AntdApp>{children}</AntdApp>
+          <AntdApp>
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
+          </AntdApp>
         </AntdRegistry>
       </ConfigProvider>
       </body>

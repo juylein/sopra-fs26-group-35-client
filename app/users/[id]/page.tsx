@@ -13,15 +13,42 @@ import { Shelf } from "@/types/shelf";
 import { Book } from "@/types/book";
 import { ToastContainer } from "react-toastify";
 import {UserStats} from "@/types/leaderboard";
-import {Activities} from "@/types/activities";
+import {Activity} from "@/types/activity";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
+import PieChart from "@/components/piechart";
 
-const FRIENDS = [
-    { name: "Julie", action: "finished and reviewed", book: "Dune", time: "1h ago", color: "#8b1a1a" },
-    { name: "Fraia", action: "finished", book: "Lord of the Flies", time: "5h ago", color: "#3a5a8b" },
-    { name: "Natalia", action: "started reading", book: "A Gentleman in Moscow", time: "13h ago", color: "#5a5a5a" },
-    { name: "Vanessa", action: "finished", book: "And Then There Were None", time: "20h ago", color: "#2a7a4a" },
+const avatarColor = (name: string) => {
+    const colors = ["#8b1a1a", "#3a5a8b", "#5a5a5a", "#2a7a4a", "#7a6e5e", "#6a3a8b"];
+    let hash = 0;
+    for (const c of name) hash += c.charCodeAt(0);
+    return colors[hash % colors.length];
+};
+
+const GENRE_COLORS = [
+  "#3a5a8b", "#8b1a1a", "#2a7a4a", "#c4903a",
+  "#5a5a5a", "#7a3080", "#3a8b7a", "#8b6a1a",
 ];
+
+
+const formatActivityTime = (raw: string | number[]): string => {
+    // Jackson 3.x serialises LocalDateTime as [year,month,day,hour,min,sec,...] by default
+    let date: Date;
+    if (Array.isArray(raw)) {
+        const [y, mo, d, h = 0, min = 0] = raw as number[];
+        date = new Date(y, mo - 1, d, h, min);
+    } else {
+        date = new Date(raw);
+    }
+    const diff = Date.now() - date.getTime();
+    const minutes = Math.floor(diff / 60_000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 const BOOKS_PER_ROW = 18;
 const SHELF_MAX = BOOKS_PER_ROW * 3;
@@ -36,6 +63,7 @@ const Dashboard: React.FC = () => {
     const { clear: clearToken } = useLocalStorage<string>("token", "");
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
     const { handleErrorMessage } = useHandleErrorMessage();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Shelves state
     const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -53,7 +81,7 @@ const Dashboard: React.FC = () => {
     const [latestSessionEmpty, setLatestSessionEmpty] = useState(false);
     const [resumeLoading, setResumeLoading] = useState(false);
     const [leaderboard, setLeaderboard] = useState<UserStats[]>([]);
-    const [activities,setActivities] = useState<Activities[]>([]);
+    const [activities,setActivities] = useState<Activity[]>([]);
     // Compute selected shelf and books to display based on selectedShelfId
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const displayBooks = selectedShelf?.shelfBooks.map(sb => sb.book) ?? [];
@@ -69,8 +97,24 @@ const Dashboard: React.FC = () => {
             (u) => u.id=== Number(id)
         );
 
+    // Leaderboard state
+    const sortedLeaderboard = [...leaderboard].sort((a, b) => b.totalPoints - a.totalPoints);
+    const currentUserRank = sortedLeaderboard.findIndex((u) => u.id === Number(id)) + 1;
+    const currentUserLeaderboardEntry = sortedLeaderboard.find((u) => u.id === Number(id));
+
+    // Stats
+    const [userStats, setUserStats] = useState<{
+    totalPoints: number;
+    booksRead: number;
+    pagesRead: number;
+    numFriends: number;
+    readingPoints: number;
+    quizPoints: number;
+    } | null>(null);
+
     // Fetch shelves on component mount
     useEffect(() => {
+        if (isLoggingOut) return;
         const fetchShelves = async () => {
             if (!id) return;
 
@@ -91,6 +135,7 @@ const Dashboard: React.FC = () => {
     }, [apiService, userId]);
 
     useEffect(() => {
+        if (isLoggingOut) return;
         const fetchLatest = async () => {
             try {
                 const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null } | null>(
@@ -129,6 +174,7 @@ const Dashboard: React.FC = () => {
     };
 
     useEffect(() => {
+        if (isLoggingOut) return;
         const getLeaderboard = async () => {
             try {
                 const data = await apiService.get<UserStats[]>(`/users/leaderboard`);
@@ -142,14 +188,15 @@ const Dashboard: React.FC = () => {
     }, [apiService]);
 
     useEffect(() => {
+        if (isLoggingOut) return;
         const fetchActivities = async () => {
             if (!userId) return;
     
             try {
-                const data = await apiService.get<Activities[]>(`/users/${userId}/activities`);
+                const data = await apiService.get<Activity[]>(`/users/${userId}/activities`);
                 setActivities(data);
             } catch (error) {
-                handleErrorMessage(error);
+                console.error("Failed to fetch activities", error);
             }
         };
     
@@ -164,6 +211,7 @@ const Dashboard: React.FC = () => {
     };
 
     const handleLogout = async (): Promise<void> => {
+        setIsLoggingOut(true);
         try {
             if (!userId) {
                 router.push("/login");
@@ -201,6 +249,33 @@ const Dashboard: React.FC = () => {
 
         fetchUser();
     }, [apiService, id, userId, router]);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            if (!userId || !id) return;
+
+            try {
+                console.log(`Fetching stats for user ID ${id}...`);
+
+                const data = await apiService.get<{
+                    totalPoints: number;
+                    booksRead: number;
+                    pagesRead: number;
+                    numFriends: number;
+                    readingPoints: number;
+                    quizPoints: number;
+                }>(`/users/${id}/statistics`);
+
+                console.log("Fetched user stats:", data);
+
+                setUserStats(data);
+            } catch (error) {
+                console.error("Failed to fetch user stats:", error);
+            }
+        };
+
+        fetchStats();
+    }, [apiService, id, userId]);
 
     return (
         <div className="dashboard-root">
@@ -466,6 +541,72 @@ const Dashboard: React.FC = () => {
                         })()}
                     </div>
 
+                    {/* Reading Stats */}
+                    <div className="stats-card">
+                    <div className="stats-card-title">Reading Stats</div>
+                    <div className="stats-body">
+
+                        {/* Left: reading points + quiz points */}
+                        <div className="stats-metrics">
+                        <div className="stats-metric">
+                            <div className="stats-metric-icon">📖</div>
+                            <div className="stats-metric-value">{userStats?.readingPoints ?? "—"}</div>
+                            <div className="stats-metric-label">Reading points</div>
+                        </div>
+                        <div className="stats-divider" />
+                        <div className="stats-metric">
+                            <div className="stats-metric-icon">🧠</div>
+                            <div className="stats-metric-value">{userStats?.quizPoints ?? "—"}</div>
+                            <div className="stats-metric-label">Quiz points</div>
+                        </div>
+                        </div>
+
+                        <div className="stats-vertical-divider" />
+
+                        {/* Middle: Genre breakdown pie */}
+                        <div className="stats-chart-section">
+                            <div className="stats-genre-title">Genres Read</div>
+
+                            <PieChart
+                                slices={
+                                    Object.entries(
+                                        (readShelf?.shelfBooks ?? []).reduce<Record<string, number>>((acc, sb) => {
+                                            const g = sb.book.genre ?? "Unknown";
+                                            acc[g] = (acc[g] ?? 0) + 1;
+                                            return acc;
+                                        }, {})
+                                    )
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([label, value], i) => ({
+                                        label,
+                                        value,
+                                        color: GENRE_COLORS[i % GENRE_COLORS.length],
+                                    }))
+                                }
+                                emptyMessage="Start reading to see your genre breakdown!"
+                            />
+                        </div>
+
+                        <div className="stats-vertical-divider" />
+
+                        {/* Right: Points breakdown donut */}
+                        <div className="stats-chart-section">
+                            <div className="stats-genre-title">Points Breakdown</div>
+
+                            <PieChart
+                                slices={[
+                                    { label: "Reading", value: userStats?.readingPoints ?? 0, color: "#3a5a8b" },
+                                    { label: "Quiz", value: userStats?.quizPoints ?? 0, color: "#c4903a" },
+                                ]}
+                                showTotal
+                                centerLabel="total"
+                                emptyMessage="Earn points to see your breakdown!"
+                            />
+                        </div>
+
+                    </div>
+                    </div>
+
                     {/* Bottom Row */}
                     <div className="dashboard-bottom-row">
 
@@ -473,65 +614,86 @@ const Dashboard: React.FC = () => {
                         <div className="bottom-card">
                             <div className="bottom-card-title">Friend Activity</div>
                             <div className="friend-list">
-                                {FRIENDS.map((f, i) => (
-                                    <div key={i} className="friend-row">
-                                        <div className="friend-avatar" style={{ background: f.color }}>{f.name[0]}</div>
-                                        <div style={{ flex: 1 }}>
-                                            <strong>{f.name}</strong>
-                                            <span className="friend-action"> {f.action} </span>
-                                            <strong>{f.book}</strong>
+                                {activities.length === 0 ? (
+                                    <div className="shelf-empty">No friend activity yet.</div>
+                                ) : (
+                                    activities.map((a) => (
+                                        <div key={a.id} className="friend-row">
+                                            <div className="friend-avatar" style={{ background: avatarColor(a.username) }}>{a.username[0].toUpperCase()}</div>
+                                            <div style={{ flex: 1 }}>
+                                                <strong>{a.username}</strong>
+                                                <span className="friend-action"> {a.actions} </span>
+                                                <strong>{a.book}</strong>
+                                            </div>
+                                            <div className="friend-time">{formatActivityTime(a.timestamp)}</div>
                                         </div>
-                                        <div className="friend-time">{f.time}</div>
-                                    </div>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
 
                         {/* Leaderboard */}
                         <div className="bottom-card">
-                        <div className="bottom-card-title">Leaderboard</div>
+                            <div className="bottom-card-title">Leaderboard</div>
 
-                        <div className="lb-list">
-                            {leaderboard.length === 0 ? (
-                                <div className="shelf-empty">No leaderboard data yet.</div>
-                            ) : (
-                                leaderboard.map((r, i) => (
-                                    <div key={r.id ?? i} className="lb-row">
-                                        <div className="lb-rank">{i + 1}</div>
+                            <div className="lb-list">
+                                {sortedLeaderboard.length === 0 ? (
+                                    <div className="shelf-empty">No leaderboard data yet.</div>
+                                ) : (
+                                    <>
+                                        {sortedLeaderboard.slice(0, 5).map((r, i) => (
+                                            <div key={r.id ?? i} className="lb-row">
+                                                <div className="lb-rank">{i + 1}</div>
 
-                                        <div
-                                            className="lb-avatar"
-                                            style={{ background: "#3a5a8b" }}
-                                        >
-                                            {r.username[0].toUpperCase()}
-                                        </div>
+                                                <div
+                                                    className="lb-avatar"
+                                                    style={{ background: "#3a5a8b" }}
+                                                >
+                                                    {r.username[0].toUpperCase()}
+                                                </div>
 
-                                        <div className="lb-name">{r.username}</div>
+                                                <div className="lb-name">{r.username}</div>
 
-                                        <div className="lb-points">
-                                            {r.totalPoints} points
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                                                <div className="lb-points">
+                                                    {r.totalPoints} points
+                                                </div>
+                                            </div>
+                                        ))}
 
-                            <div className="lb-dots">···</div>
+                                        {currentUserLeaderboardEntry &&
+                                            currentUserRank > 0 && (
+                                                <>
+                                                <div className="lb-dots">···</div>
 
-                            <div className="lb-row-self">
-                                <div className="lb-rank">–</div>
+                                                <div className="lb-row-self">
+                                                    <div className="lb-rank">
+                                                        {currentUserRank}
+                                                    </div>
 
-                                <div className="lb-avatar" style={{ background: "#7a6e5e" }}>
-                                    {user?.name?.[0]?.toUpperCase() ?? "U"}
-                                </div>
+                                                    <div
+                                                        className="lb-avatar"
+                                                        style={{ background: "#3a5a8b" }}
+                                                    >
+                                                        {user?.username?.toUpperCase()[0] ?? "U"}
+                                                    </div>
 
-                                <div className="lb-name" style={{ fontWeight: 700 }}>
-                                    {user?.name ?? "User"}
-                                </div>
+                                                    <div
+                                                        className="lb-name"
+                                                        style={{ fontWeight: 700 }}
+                                                    >
+                                                        {currentUserLeaderboardEntry.username}
+                                                    </div>
 
-                                <div className="lb-points">–</div>
+                                                    <div className="lb-points">
+                                                        {currentUserLeaderboardEntry.totalPoints} points
+                                                    </div>
+                                                </div>
+                                                </>
+                                            )}
+                                    </>
+                                )}
                             </div>
                         </div>
-                    </div>
 
                     </div>
                 </div>

@@ -5,5 +5,6 @@ export interface UserStats {
     numFriends: number;
     pagesRead: number;
     booksRead:number;
+    readingPoints: number;
     quizPoints: number;
 }
