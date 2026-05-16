@@ -430,14 +430,18 @@ const Discover: React.FC = () => {
         try {
             const values = await manualForm.validateFields();
             setManualAdding(true);
+
+            const manualId = `manual-${crypto.randomUUID()}`;
+
             await apiService.post(`/users/${userId}/library/shelves/${values.shelfId}/books`, {
-                googleId: null,
+                googleId: manualId,
                 name: values.name,
                 authors: values.authors ? values.authors.split(",").map((a: string) => a.trim()) : [],
                 pages: values.pages ?? null,
                 releaseYear: values.releaseYear ?? null,
                 genre: values.genre ?? null,
                 description: values.description ?? null,
+                coverUrl: null,
             });
             setManualAdded(true);
             messageApi.success(`"${values.name}" added to shelf!`);

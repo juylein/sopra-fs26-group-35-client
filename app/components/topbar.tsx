@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, UserPlus, HelpCircle, Activity } from "lucide-react";
+import { Bell, UserPlus, HelpCircle, Activity, X } from "lucide-react";
 import { Button } from "antd";
 import "@/styles/topbar.css";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useApi } from "@/hooks/useApi";
+import { useRouter } from "next/navigation";
 
 type NotificationType = "FRIEND_REQUEST" | "QUIZ_CHALLENGE" | "FRIEND_ACTIVITY" | "SHARED_SESSION";
 
@@ -29,7 +30,18 @@ const TYPE_LABEL: Record<NotificationType, string> = {
     FRIEND_REQUEST: "Friend Request",
     QUIZ_CHALLENGE: "Quiz Challenge",
     FRIEND_ACTIVITY: "Friend Activity",
-    SHARED_SESSION:  "Shared Session",
+    SHARED_SESSION: "Shared Session",
+};
+
+const getRedirectPath = (type: NotificationType, referenceId: number | null): string | null => {
+    if (!referenceId) return null;
+    switch (type) {
+        case "FRIEND_REQUEST": return `/friends`;
+        case "QUIZ_CHALLENGE": return `/quiz/${referenceId}`;
+        case "SHARED_SESSION": return `/session/${referenceId}`;
+        case "FRIEND_ACTIVITY": return null;
+        default: return null;
+    }
 };
 
 type TopBarProps = {
@@ -41,6 +53,7 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
     const { value: storedId } = useLocalStorage<string>("id", "");
     const userId = storedId ? Number(storedId) : null;
     const apiService = useApi();
+    const router = useRouter();
 
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -49,16 +62,14 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
 
     const fetchUnreadCount = useCallback(async () => {
         if (!userId) return;
-
         const token = localStorage.getItem("token");
-        if(!token) return;
+        if (!token) return;
         try {
             const data = await apiService.get<{ unreadCount: number }>(
                 `/users/${userId}/notifications/unread-count`
             );
             setUnreadCount(data.unreadCount ?? 0);
-        } catch {
-        }
+        } catch {}
     }, [userId, apiService]);
 
     const fetchNotifications = useCallback(async () => {
@@ -67,9 +78,12 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
             const data = await apiService.get<Notification[]>(
                 `/users/${userId}/notifications`
             );
-            setNotifications(data);
-        } catch {
-        }
+            // Sort newest first on the frontend as a safeguard
+            const sorted = [...data].sort(
+                (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setNotifications(sorted);
+        } catch {}
     }, [userId, apiService]);
 
     const markAllRead = useCallback(async () => {
@@ -78,9 +92,25 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
             await apiService.put(`/users/${userId}/notifications/read`, {});
             setUnreadCount(0);
             setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        } catch {
-        }
+        } catch {}
     }, [userId, apiService]);
+
+    const handleDiscard = async (e: React.MouseEvent, notificationId: number) => {
+        e.stopPropagation();
+        if (!userId) return;
+        try {
+            await apiService.delete(`/users/${userId}/notifications/${notificationId}`);
+            setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+        } catch {}
+    };
+
+    const handleNotificationClick = (n: Notification) => {
+        const path = getRedirectPath(n.type, n.referenceId);
+        if (path) {
+            setOpen(false);
+            router.push(path);
+        }
+    };
 
     useEffect(() => {
         fetchUnreadCount();
@@ -107,24 +137,12 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const grouped = notifications.reduce<Record<NotificationType, Notification[]>>(
-        (acc, n) => {
-            acc[n.type] = acc[n.type] ?? [];
-            acc[n.type].push(n);
-            return acc;
-        },
-        {} as Record<NotificationType, Notification[]>
-    );
-
-    const groupOrder: NotificationType[] = ["FRIEND_REQUEST", "QUIZ_CHALLENGE", "FRIEND_ACTIVITY", 'SHARED_SESSION'];
-
     return (
         <header className="topbar">
             {title && <span className="topbar-title">{title}</span>}
 
             <div className="topbar-actions">
                 <div className="topbar-notif-wrapper" ref={dropdownRef}>
-
                     <button
                         className="topbar-icon-btn"
                         onClick={handleBellClick}
@@ -147,27 +165,34 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
                                     <p>You&apos;re all caught up!</p>
                                 </div>
                             ) : (
-                                groupOrder.map((type) =>
-                                    grouped[type]?.length > 0 ? (
-                                        <div key={type} className="topbar-notif-group">
-                                            <div className="topbar-notif-group-label">
-                                                {TYPE_ICON[type]}
-                                                <span>{TYPE_LABEL[type]}</span>
-                                            </div>
-                                            {grouped[type].map((n) => (
-                                                <div
-                                                    key={n.id}
-                                                    className={`topbar-notif-item ${n.read ? "read" : "unread"}`}
+                                notifications.map((n) => {
+                                    const path = getRedirectPath(n.type, n.referenceId);
+                                    return (
+                                        <div
+                                            key={n.id}
+                                            className={`topbar-notif-item ${n.read ? "read" : "unread"} ${path ? "clickable" : ""}`}
+                                            onClick={() => handleNotificationClick(n)}
+                                        >
+                                            <div className="topbar-notif-item-header">
+                                                <span className="topbar-notif-type-label">
+                                                    {TYPE_ICON[n.type]}
+                                                    <span>{TYPE_LABEL[n.type]}</span>
+                                                </span>
+                                                <button
+                                                    className="topbar-notif-discard"
+                                                    onClick={(e) => handleDiscard(e, n.id)}
+                                                    aria-label="Dismiss notification"
                                                 >
-                                                    <p className="topbar-notif-text">{n.message}</p>
-                                                    <span className="topbar-notif-time">
-                                                        {new Date(n.createdAt).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                            <p className="topbar-notif-text">{n.message}</p>
+                                            <span className="topbar-notif-time">
+                                                {new Date(n.createdAt).toLocaleString()}
+                                            </span>
                                         </div>
-                                    ) : null
-                                )
+                                    );
+                                })
                             )}
                         </div>
                     )}

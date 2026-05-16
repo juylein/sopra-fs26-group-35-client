@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import Sidebar from "@/components/sidebar";
@@ -31,6 +31,11 @@ const Friends: React.FC = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequestGetDTO[]>([]);
   const [requesters, setRequesters] = useState<Record<number, User>>({});
   const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const [suggestions, setSuggestions] = useState<User[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const suggestionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -180,28 +185,105 @@ const Friends: React.FC = () => {
           </div>
 
           {/* Search + Add Friend */}
-          <div>
-            <input
-              type="text"
-              placeholder="Search by username"
-              className="friends-search"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  searchUser(searchValue);
-                }
-              }}
-            />
-            {searchMessage && (
-              <div style={{ color: "#b00020", marginTop: 6 }}>
-                {searchMessage}
-              </div>
-            )}
+          <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ position: "relative" }}>
+                <input
+                    type="text"
+                    placeholder="Search by username"
+                    className="friends-search"
+                    value={searchValue}
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setSearchValue(val);
+                      if (!val.trim()) { setSuggestions([]); return; }
 
-            <Button type="link" style={{ fontWeight: 500 }} onClick={() => searchUser(searchValue)}>
-              + Add Friend
-            </Button>
+                      if (suggestionTimeoutRef.current) clearTimeout(suggestionTimeoutRef.current);
+                      suggestionTimeoutRef.current = setTimeout(async () => {
+                        setSuggestionsLoading(true);
+                        try {
+                          const results = await apiService.get<User[]>(`/users/search?query=${encodeURIComponent(val.trim())}`);
+                          setSuggestions(results ?? []);
+                        } catch {
+                          setSuggestions([]);
+                        } finally {
+                          setSuggestionsLoading(false);
+                        }
+                      }, 400);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        searchUser(searchValue);
+                        setSuggestions([]);
+                      }
+                    }}
+                    onBlur={() => setTimeout(() => setSuggestions([]), 150)}
+                />
+
+                {/* Suggestions dropdown */}
+                {(suggestions.length > 0 || suggestionsLoading) && (
+                    <div ref={suggestionsRef} style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      background: "#fff",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 8,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      zIndex: 100,
+                      marginTop: 4,
+                      overflow: "hidden",
+                    }}>
+                      {suggestionsLoading ? (
+                          <div style={{ padding: "10px 14px", color: "#999", fontSize: 14 }}>Searching...</div>
+                      ) : (
+                          suggestions.map((user) => (
+                              <div
+                                  key={user.id}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    padding: "10px 14px",
+                                    cursor: "pointer",
+                                    transition: "background 0.15s",
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")}
+                                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                                  onMouseDown={() => {
+                                    setSearchValue(user.username ?? "");
+                                    setSuggestions([]);
+                                    searchUser(user.username ?? "");
+                                  }}
+                              >
+                                <div style={{
+                                  width: 32, height: 32, borderRadius: "50%",
+                                  background: "#f4c400", display: "flex",
+                                  alignItems: "center", justifyContent: "center",
+                                  fontWeight: 600, fontSize: 13,
+                                }}>
+                                  {user.username?.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{ fontWeight: 600, fontSize: 14 }}>{user.username}</div>
+                                  {user.name && <div style={{ fontSize: 12, color: "#888" }}>{user.name}</div>}
+                                </div>
+                              </div>
+                          ))
+                      )}
+                    </div>
+                )}
+              </div>
+
+              <Button type="link" style={{ fontWeight: 500 }} onClick={() => { searchUser(searchValue); setSuggestions([]); }}>
+                + Add Friend
+              </Button>
+            </div>
+
+            {searchMessage && (
+                <div style={{ color: "#b00020", marginTop: 6 }}>{searchMessage}</div>
+            )}
           </div>
 
           {/* Friend Requests */}
