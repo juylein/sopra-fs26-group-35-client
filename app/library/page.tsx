@@ -11,6 +11,7 @@ import TopBar from "@/components/topbar";
 import "@/styles/library.css"
 import { useAppMessage } from "@/hooks/useAppMessage";
 import { Shelf } from "@/types/shelf";
+import { User } from "@/types/user";
 
 // How many books fit per row — adjust to match actual .book width + gap
 const BOOKS_PER_ROW = 18;
@@ -35,25 +36,49 @@ const Library: React.FC = () => {
   const [renamingShelfId, setRenamingShelfId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
 
+  // For sharing shelves
+  const [friends, setFriends] = useState<User[]>([]);
+  const [shareModalShelfId, setShareModalShelfId] = useState<number | null>(null);
+  const [shareSearchValue, setShareSearchValue] = useState<string>("");
+
+  // For viewing members
+  const [membersModalShelf, setMembersModalShelf] = useState<Shelf | null>(null);
+
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
   
+  const loadAllShelves = async () => {
+    setLoadingData(true);
+    try {
+      const [privateShelves, sharedShelves] = await Promise.all([
+        apiService.get<Shelf[]>(`/users/${userId}/library/shelves`),
+        apiService.get<Shelf[]>(`/users/${userId}/library/shared-shelves`),
+      ]);
+      setShelves([...privateShelves, ...sharedShelves]);
+    } catch {
+      toast.error("Failed to load shelves");
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchShelves = async () => {
-      setLoadingData(true);
+    if (userId) loadAllShelves();
+  }, [apiService, userId]);
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      if (!userId) return;
       try {
-        const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
-        setShelves(data);
+        const user = await apiService.get<User>(`/users/${userId}`);
+        setFriends(user.friends ?? []);
       } catch {
-        toast.error("Failed to load shelves");
-      } finally {
-        setLoadingData(false);
+        // non-critical, friends list is for sharing only
       }
     };
-
-    if (userId) fetchShelves();
+    fetchFriends();
   }, [apiService, userId]);
 
   const handleCreateNewShelf = async () => {
@@ -69,8 +94,7 @@ const Library: React.FC = () => {
       setShelfName("");
 
       // Refresh shelves
-      const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
-      setShelves(data);
+      await loadAllShelves();
 
     } catch (error) {
       console.error(error);
@@ -127,6 +151,31 @@ const Library: React.FC = () => {
     } catch (error) {
       console.error(error);
       messageApi.error("Failed to remove book");
+    }
+  };
+
+  const openShareModal = (shelfId: number) => {
+    setShareModalShelfId(shelfId);
+    setShareSearchValue("");
+  };
+
+  const closeShareModal = () => {
+    setShareModalShelfId(null);
+    setShareSearchValue("");
+  };
+
+  const handleInviteToShelf = async (friendId: number, friendUsername: string) => {
+    if (!shareModalShelfId) return;
+    try {
+      await apiService.post(
+        `/users/${userId}/library/shelves/${shareModalShelfId}/members`,
+        { targetUserId: friendId }
+      );
+      messageApi.success(`Invitation sent to ${friendUsername}!`);
+      closeShareModal();
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to send invitation");
     }
   };
 
@@ -213,7 +262,32 @@ const Library: React.FC = () => {
                       <button className="primary-btn" onClick={() => { setRenamingShelfId(null); setRenameValue(""); }}>Cancel</button>
                     </div>
                   ) : (
-                    <div className="section-title">{shelf.name}</div>
+                    <div className="section-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {shelf.name}
+                      {shelf.shared && (
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: "#3a5a8b",
+                          color: "#fff",
+                          borderRadius: 12,
+                          padding: "2px 9px",
+                          letterSpacing: "0.03em",
+                        }}>
+                          Shared
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Share button (hidden for default shelves) */}
+                  {!isDefaultShelf(shelf.name) && (
+                    <button
+                      className="share-bookshelf-btn"
+                      onClick={() => openShareModal(shelf.id)}
+                    >
+                      Share
+                    </button>
                   )}
 
                   {/* Edit button */}
@@ -308,11 +382,17 @@ const Library: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Footer row: count + View Bookshelf */}
+                  {/* Footer row: count + Members + View Bookshelf */}
                   <div className="shelf-footer">
                     <div className="bookshelf-count">
                       {shelf.shelfBooks.length} books{hasMore && ` · showing ${MAX_BOOKS_DISPLAYED}`}
                     </div>
+                    <button
+                      className="view-shelf-btn"
+                      onClick={() => setMembersModalShelf(shelf)}
+                    >
+                      👥 {shelf.shared ? shelf.memberUsernames?.length ?? 0 : 1} member{(!shelf.shared || (shelf.memberUsernames?.length ?? 0) === 1) ? "" : "s"}
+                    </button>
                     <button
                       className="view-shelf-btn"
                       onClick={() => router.push(`/library/${shelf.id}`)}
@@ -377,6 +457,147 @@ const Library: React.FC = () => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Members modal */}
+      {membersModalShelf !== null && (
+        <div className="modal-overlay" onClick={() => setMembersModalShelf(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>{membersModalShelf.name} — Members</h2>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(membersModalShelf.memberUsernames ?? []).map((username, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 10px",
+                    background: "#f5f5f5",
+                    borderRadius: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      background: membersModalShelf.shared ? "#3a5a8b" : "#2e7d32",
+                      borderRadius: "50%",
+                      width: 34,
+                      height: 34,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 600,
+                      color: "#fff",
+                      flexShrink: 0,
+                      fontSize: 13,
+                    }}
+                  >
+                    {username.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{username}</div>
+                  {!membersModalShelf.shared && (
+                    <div style={{ fontSize: 12, color: "#777", marginLeft: 4 }}>Owner</div>
+                  )}
+                </div>
+              ))}
+
+              {(membersModalShelf.memberUsernames ?? []).length === 0 && (
+                <div style={{ color: "#777", fontSize: 14 }}>No members yet.</div>
+              )}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button className="primary-btn" onClick={() => setMembersModalShelf(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share shelf modal */}
+      {shareModalShelfId !== null && (
+        <div className="modal-overlay" onClick={closeShareModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Invite a friend to this shelf</h2>
+
+            <input
+              className="modal-input"
+              value={shareSearchValue}
+              onChange={(e) => setShareSearchValue(e.target.value)}
+              placeholder="Filter by username"
+              style={{ marginBottom: 12 }}
+              autoFocus
+            />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto" }}>
+              {friends
+                .filter((f) =>
+                  !shareSearchValue.trim() ||
+                  f.username?.toLowerCase().includes(shareSearchValue.trim().toLowerCase())
+                )
+                .map((friend) => (
+                  <div
+                    key={friend.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "8px 10px",
+                      background: "#f5f5f5",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          background: "#f4c400",
+                          borderRadius: "50%",
+                          width: 34,
+                          height: 34,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 600,
+                          flexShrink: 0,
+                          fontSize: 13,
+                        }}
+                      >
+                        {friend.username?.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{friend.username}</div>
+                        {friend.name && (
+                          <div style={{ fontSize: 12, color: "#555" }}>{friend.name}</div>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      className="primary-btn"
+                      onClick={() => handleInviteToShelf(friend.id, friend.username ?? "")}
+                    >
+                      Invite
+                    </button>
+                  </div>
+                ))}
+
+              {friends.length === 0 && (
+                <div style={{ color: "#777", fontSize: 14 }}>You have no friends to invite yet.</div>
+              )}
+
+              {friends.length > 0 &&
+                friends.filter((f) =>
+                  !shareSearchValue.trim() ||
+                  f.username?.toLowerCase().includes(shareSearchValue.trim().toLowerCase())
+                ).length === 0 && (
+                  <div style={{ color: "#777", fontSize: 14 }}>No friends match your search.</div>
+                )}
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button className="primary-btn" onClick={closeShareModal}>Close</button>
             </div>
           </div>
         </div>

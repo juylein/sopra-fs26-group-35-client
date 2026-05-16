@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Bell, UserPlus, HelpCircle, Activity } from "lucide-react";
+import { Bell, UserPlus, HelpCircle, Activity, BookOpen } from "lucide-react";
 import { Button } from "antd";
 import "@/styles/topbar.css";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useApi } from "@/hooks/useApi";
 
-type NotificationType = "FRIEND_REQUEST" | "QUIZ_CHALLENGE" | "FRIEND_ACTIVITY" | "SHARED_SESSION";
+type NotificationType = "FRIEND_REQUEST" | "QUIZ_CHALLENGE" | "FRIEND_ACTIVITY" | "SHARED_SESSION" | "SHELF_INVITATION";
 
 type Notification = {
     id: number;
@@ -19,17 +19,19 @@ type Notification = {
 };
 
 const TYPE_ICON: Record<NotificationType, React.ReactNode> = {
-    FRIEND_REQUEST: <UserPlus size={15} />,
-    QUIZ_CHALLENGE: <HelpCircle size={15} />,
-    FRIEND_ACTIVITY: <Activity size={15} />,
-    SHARED_SESSION: <Activity size={15} />,
+    FRIEND_REQUEST:   <UserPlus size={15} />,
+    QUIZ_CHALLENGE:   <HelpCircle size={15} />,
+    FRIEND_ACTIVITY:  <Activity size={15} />,
+    SHARED_SESSION:   <Activity size={15} />,
+    SHELF_INVITATION: <BookOpen size={15} />,
 };
 
 const TYPE_LABEL: Record<NotificationType, string> = {
-    FRIEND_REQUEST: "Friend Request",
-    QUIZ_CHALLENGE: "Quiz Challenge",
-    FRIEND_ACTIVITY: "Friend Activity",
-    SHARED_SESSION:  "Shared Session",
+    FRIEND_REQUEST:   "Friend Request",
+    QUIZ_CHALLENGE:   "Quiz Challenge",
+    FRIEND_ACTIVITY:  "Friend Activity",
+    SHARED_SESSION:   "Shared Session",
+    SHELF_INVITATION: "Shelf Invitation",
 };
 
 type TopBarProps = {
@@ -116,7 +118,7 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
         {} as Record<NotificationType, Notification[]>
     );
 
-    const groupOrder: NotificationType[] = ["FRIEND_REQUEST", "QUIZ_CHALLENGE", "FRIEND_ACTIVITY", 'SHARED_SESSION'];
+    const groupOrder: NotificationType[] = ["SHELF_INVITATION", "FRIEND_REQUEST", "QUIZ_CHALLENGE", "FRIEND_ACTIVITY", "SHARED_SESSION"];
 
     return (
         <header className="topbar">

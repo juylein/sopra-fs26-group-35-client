@@ -147,6 +147,33 @@
   opacity: 0.7;
 }
 
+/* Share bookshelf */
+.share-bookshelf-btn {
+  position: absolute;
+  top: 10px;
+  right: 215px;
+
+  background: #3a5a8b;
+  color: #fff;
+
+  border: none;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  height: 40px;
+  width: 90px;
+  padding: 0 10px;
+
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.share-bookshelf-btn:hover {
+  background: #2c4570;
+}
+
 /* Edit bookshelf */
 .edit-bookshelf-btn {
     background: #1D6E27 !important;
