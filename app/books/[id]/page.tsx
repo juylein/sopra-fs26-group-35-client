@@ -1,5 +1,6 @@
 "use client";
 
+import AddReviewModal from "@/components/addReviewModal";
 import React, { useEffect, useState } from "react";
 import TopBar from "@/components/topbar";
 import { useRouter, useParams } from "next/navigation";
@@ -8,6 +9,8 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
 import { toast, ToastContainer } from "react-toastify";
+import { Review } from "@/types/review";
+import "@/styles/library.css";
 
 interface Book {
   id: number;
@@ -19,6 +22,7 @@ interface Book {
   genre: string | null;
   description: string | null;
   coverUrl: string | null;
+  reviews: Review[] | null;
 }
 
 const Book: React.FC = () => {
@@ -28,8 +32,13 @@ const Book: React.FC = () => {
 
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
+
+  const myReview = book?.reviews?.find((r) => r.userId === Number(userId)) ?? null;
+  const otherReviews = book?.reviews?.filter((r) => r.userId !== Number(userId)) ?? [];
 
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -50,6 +59,46 @@ const Book: React.FC = () => {
     router.push(`/session/`);
   } ;
 
+  const handleReviewSubmission = async (rating: number, review: string) => {
+    try {
+      await apiService.post(`/books/${id}/reviews`, { rating, review });
+      toast.success("Review added!");
+    } catch (error) {
+      toast.error("Failed to add review.");
+    }
+    try {
+      const data = await apiService.get<Book>(`/books/${id}`);
+      setBook(data);
+    } catch (error) {
+      console.error("Failed to fetch book:", error);
+    }
+  };
+  
+ const handleDeleteReview = async () => {
+  try {
+    await apiService.delete(`/users/${userId}/reviews/${myReview?.id}`);
+    toast.success("Review deleted!");
+    const data = await apiService.get<Book>(`/books/${id}`);
+    setBook(data);
+  } catch (error) {
+    toast.error("Failed to delete review.");
+  }
+};
+
+  const handleEditReview = async (rating: number, review: string) => {
+  try {
+    await apiService.put(`/users/${userId}/reviews/${myReview?.id}`, { rating, review });
+    setBook((prev) => prev ? {
+      ...prev,
+      reviews: (prev.reviews ?? []).map((r) => 
+        r.id === myReview?.id ? { ...r, rating, review } : r
+      )
+    } : null);
+    toast.success("Review updated!");
+  } catch (error) {
+    toast.error("Failed to update review.");
+  }
+};
   useEffect(() => {
     if (!localStorage.getItem("token")) {
       toast.error("You need to be logged in to access this page.", {
@@ -75,7 +124,7 @@ const Book: React.FC = () => {
       }
     };
 
-    fetchBook();
+    fetchBook();  
   }, [id, apiService]);
 
   if (!isAuthorized) {
@@ -91,6 +140,7 @@ const Book: React.FC = () => {
   }
 
   return (
+    
     <div className="library-container">
       <Sidebar />
       <TopBar onLogout={handleLogout} />
@@ -149,8 +199,80 @@ const Book: React.FC = () => {
   
             <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
               <Button className="discover-read-btn" onClick={startReading}>Start Reading  </Button>
-              <Button className="discover-read-btn">Add review </Button>
+              <Button className="discover-read-btn" onClick={() => setReviewModalOpen(true)} disabled={!!myReview}
+              >
+                {myReview ? "Already reviewed" : "Add review"}
+              </Button> 
             </div>
+
+            <AddReviewModal
+              open={reviewModalOpen}
+              onClose={() => setReviewModalOpen(false)}
+              onSubmit={handleReviewSubmission}
+            />
+
+            <AddReviewModal
+              open={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              onSubmit={handleEditReview}
+              initialRating={myReview?.rating}
+              initialReview={myReview?.review}
+            />
+
+            <div className="bottom-card" style={{ marginTop: 30 }}>
+            <div className="bottom-card-title">Reviews</div>
+
+              {myReview && (
+                <div key={myReview.id}  style={{
+                  border: "1px solid #e0d8cc",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  background: "#f9f9f9",
+                  marginBottom: "12px"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <p style={{ margin: 0 }}>
+                      <b>{myReview.username}</b>{" "}
+                      <span style={{ color: "#3a6b2a" }}>(you)</span>{" "}
+                      <span style={{ color: "#fadb14" }}>{"★".repeat(myReview.rating)}</span>{"☆".repeat(5 - myReview.rating)}
+                    </p>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                      <button className="edit-bookshelf-btn" onClick={() => setEditModalOpen(true)}>Edit</button>
+                      <button className="delete-bookshelf-btn" style={{ position: "static" }} onClick={handleDeleteReview}>Delete Review</button>
+                    </div>
+                  </div>
+                  <p>{myReview.review}</p>
+                  <div className="friend-time">
+                     {new Date(myReview.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              )}
+
+              {otherReviews
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .map((r) => (
+                 <div key={r.id} style={{
+                    borderBottom: "1px solid #eee",
+                    padding: "12px 0"
+                  }}>
+                    <p><b>{r.username}</b> <span style={{ color: "#fadb14" }}>{"★".repeat(r.rating)}</span>{"☆".repeat(5 - r.rating)}</p>
+                    <p>{r.review}</p>
+                    <div className="friend-time">
+                        {new Date(r.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+              ))}
+
+              {/* No reviews yet — only when neither exists */}
+              {!myReview && otherReviews.length === 0 && (
+                <div className="shelf-empty"> No reviews yet, be the first!</div>
+              )}
+            </div>
+
+
+
+
+
           </div>
   
         </div>
