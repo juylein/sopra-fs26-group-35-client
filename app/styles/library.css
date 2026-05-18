@@ -301,3 +301,227 @@
   color: #fff;
   font-weight: 700;
 }
+
+/* ── Default vs Custom shelf styling ───────────────── */
+
+.section-default {
+  background: #faf7f2;
+  border: 1px solid #e0d8cc;
+}
+
+.section-custom {
+  background: #f5f7fa;
+  border: 1px solid #c8d4e8;
+  border-left: 4px solid #3a5a8b;
+}
+
+.shelf-default-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7a6e5e;
+  background: #e8e0cc;
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-bottom: 6px;
+}
+
+/* ── Shelf action buttons (top-right) ───────────────── */
+.shelf-action-btns {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.shelf-action-btns .edit-bookshelf-btn,
+.shelf-action-btns .delete-bookshelf-btn {
+  position: static !important;
+}
+
+/* ── Edit mode list view ────────────────────────────── */
+.shelf-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e0d8cc;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.shelf-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: #fff;
+  border-bottom: 1px solid #f0ebe0;
+  transition: background 0.15s;
+}
+
+.shelf-edit-row:last-of-type {
+  border-bottom: none;
+}
+
+.shelf-edit-row:hover {
+  background: #faf7f2;
+}
+
+.shelf-edit-cover {
+  width: 40px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.shelf-edit-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shelf-edit-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #3a5a8b;
+  color: #fff;
+  font-size: 7px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 2px 3px;
+  text-align: center;
+  border-radius: 3px;
+}
+
+.shelf-edit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.shelf-edit-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shelf-edit-author {
+  font-size: 12px;
+  color: #7a6e5e;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shelf-edit-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.shelf-edit-view-btn {
+  padding: 5px 12px;
+  border: 1px solid #c8d4e8;
+  border-radius: 6px;
+  background: #fff;
+  color: #3a5a8b;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.shelf-edit-view-btn:hover {
+  background: #e8eef8;
+}
+
+.shelf-edit-remove-btn {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #fdecea;
+  color: #d32f2f;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.shelf-edit-remove-btn:hover {
+  background: #f5c6c6;
+}
+
+.shelf-edit-add-btn {
+  width: 100%;
+  padding: 10px;
+  background: #f5f7fa;
+  border: none;
+  border-top: 1px solid #e0d8cc;
+  color: #3a5a8b;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+}
+
+.shelf-edit-add-btn:hover {
+  background: #e8eef8;
+}
+
+.shelf-edit-list .shelf-empty {
+  padding: 20px;
+  text-align: center;
+}
+
+/* ── Edit list footer (pagination + add button) ─────── */
+.shelf-edit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid #e0d8cc;
+  background: #f5f7fa;
+}
+
+/* When there's no pagination, push add button to the right */
+.shelf-edit-footer:not(:has(.shelf-pagination)) {
+  justify-content: flex-end;
+}
+
+.shelf-edit-add-btn {
+  background: none;
+  border: none;
+  color: #3a5a8b;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.shelf-edit-add-btn:hover {
+  color: #2a4a7b;
+}
+
+.shelf-edit-empty {
+  padding: 20px;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+}
