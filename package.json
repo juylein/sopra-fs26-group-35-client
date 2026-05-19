@@ -22,7 +22,8 @@
     "react-dom": "^19.0.0",
     "react-loader-spinner": "^8.0.2",
     "react-toastify": "^11.0.5",
-    "sockjs-client": "^1.6.1"
+    "sockjs-client": "^1.6.1",
+    "stompjs": "^2.3.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",

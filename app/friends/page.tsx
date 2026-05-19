@@ -7,6 +7,7 @@ import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
+import { ShelfInvitationGetDTO } from "@/types/shelfInvitation";
 import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 import TopBar from "@/components/topbar";
 import { toast, ToastContainer } from "react-toastify";
@@ -30,6 +31,7 @@ const Friends: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [friendRequests, setFriendRequests] = useState<FriendRequestGetDTO[]>([]);
   const [requesters, setRequesters] = useState<Record<number, User>>({});
+  const [shelfInvitations, setShelfInvitations] = useState<ShelfInvitationGetDTO[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   const [suggestions, setSuggestions] = useState<User[]>([]);
@@ -84,6 +86,25 @@ const Friends: React.FC = () => {
         prev.filter((r) => r.id !== id)
       );
 
+    } catch (error) {
+      handleErrorMessage(error);
+    }
+  };
+
+  const acceptShelfInvitation = async (id: number) => {
+    try {
+      await apiService.put(`/users/${userId}/library/shelf-invitations/${id}/accept`, {});
+      setShelfInvitations((prev) => prev.filter((inv) => inv.id !== id));
+      toast.success("Joined shelf!");
+    } catch (error) {
+      handleErrorMessage(error);
+    }
+  };
+
+  const rejectShelfInvitation = async (id: number) => {
+    try {
+      await apiService.put(`/users/${userId}/library/shelf-invitations/${id}/reject`, {});
+      setShelfInvitations((prev) => prev.filter((inv) => inv.id !== id));
     } catch (error) {
       handleErrorMessage(error);
     }
@@ -158,8 +179,21 @@ const Friends: React.FC = () => {
       }
     };
     
+    const fetchShelfInvitations = async () => {
+      if (!userId) return;
+      try {
+        const data = await apiService.get<ShelfInvitationGetDTO[]>(
+          `/users/${userId}/library/shelf-invitations`
+        );
+        setShelfInvitations(data);
+      } catch (error) {
+        handleErrorMessage(error);
+      }
+    };
+
     fetchFriendRequests();
     fetchUserFriends();
+    fetchShelfInvitations();
   }, [userId]);
 
   if (!isAuthorized) {
@@ -283,6 +317,74 @@ const Friends: React.FC = () => {
 
             {searchMessage && (
                 <div style={{ color: "#b00020", marginTop: 6 }}>{searchMessage}</div>
+            )}
+          </div>
+
+          {/* Shelf Invitations */}
+          <div className="bottom-card" style={{ marginTop: 16 }}>
+            <div className="bottom-card-title">Shelf Invitations</div>
+
+            {shelfInvitations.length === 0 ? (
+              <div style={{ marginTop: 10, color: "#777" }}>
+                No shelf invitations
+              </div>
+            ) : (
+              shelfInvitations.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="bookshelf-card"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 12,
+                  }}
+                >
+                  {/* LEFT SIDE */}
+                  <div className="user-row">
+                    <div
+                      className="avatar"
+                      style={{
+                        background: "#3a5a8b",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        fontWeight: 600,
+                        color: "#fff",
+                      }}
+                    >
+                      {inv.senderUsername.substring(0, 2).toUpperCase()}
+                    </div>
+
+                    <div style={{ marginLeft: 10 }}>
+                      <div style={{ color: "#3a5a8b", fontSize: 14 }}>
+                        Invited you to a shared shelf
+                      </div>
+                      <div style={{ fontWeight: 600 }}>{inv.senderUsername}</div>
+                      <div className="bookshelf-sort">Shelf: {inv.shelfName}</div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT SIDE */}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <Button
+                      className="bookshelf-session-btn-resume"
+                      onClick={() => acceptShelfInvitation(inv.id)}
+                    >
+                      Accept
+                    </Button>
+                    <Button
+                      className="bookshelf-session-btn-pause"
+                      onClick={() => rejectShelfInvitation(inv.id)}
+                    >
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
 

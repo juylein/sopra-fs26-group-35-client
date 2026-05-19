@@ -35,7 +35,7 @@ const formatActivityTime = (raw: string | number[]): string => {
     let date: Date;
     if (Array.isArray(raw)) {
         const [y, mo, d, h = 0, min = 0] = raw as number[];
-        date = new Date(y, mo - 1, d, h, min);
+        date = new Date(Date.UTC(y, mo - 1, d, h, min));
     } else {
         date = new Date(raw);
     }

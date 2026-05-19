@@ -54,7 +54,7 @@ const ShelfPage: React.FC = () => {
           setShelfName(found.name);
         } else {
           setShelfName("Bookshelf");
-          setShelf({ id: Number(shelfId), name: "Bookshelf", shelfBooks: [] } as Shelf);
+          setShelf({ id: Number(shelfId), name: "Bookshelf", shared: false, ownerId: null, memberIds: null, memberUsernames: [], shelfBooks: [] });
         }
       } catch (error) {
         console.error(error);
