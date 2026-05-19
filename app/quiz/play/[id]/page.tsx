@@ -17,23 +17,19 @@ interface BackendQuestion {
     option2: string;
     option3: string;
     option4: string;
-    correctOption: number;
 }
 
 interface Question {
     id: number;
     text: string;
     options: string[];
-    answer: number;
 }
 
-interface Quiz{
-    id:number;
-    title:string;
-    difficulty:string;
-    questions:BackendQuestion[];
-
-
+interface Quiz {
+    id: number;
+    title: string;
+    difficulty: string;
+    questions: BackendQuestion[];
 }
 
 export default function PlayQuizPage() {
@@ -42,17 +38,13 @@ export default function PlayQuizPage() {
     const quizId = params?.id as string;
 
     const apiService = useApi();
-
-    const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
+    const { value: userId } = useLocalStorage<string>("id", "");
 
     const [questions, setQuestions] = useState<Question[]>([]);
     const [quizTitle, setQuizTitle] = useState("");
-
     const [current, setCurrent] = useState(0);
     const [selected, setSelected] = useState<number | null>(null);
     const [answers, setAnswers] = useState<number[]>([]);
-    const [score, setScore] = useState(0);
-
     const [loading, setLoading] = useState(true);
     const [finished, setFinished] = useState(false);
 
@@ -60,54 +52,38 @@ export default function PlayQuizPage() {
         id: q.id,
         text: q.questionText,
         options: [q.option1, q.option2, q.option3, q.option4],
-        answer: q.correctOption - 1,
     });
-
 
     useEffect(() => {
         const fetchQuiz = async () => {
             if (!userId || !quizId) return;
-
             try {
                 setLoading(true);
-
                 const data = await apiService.get<Quiz>(
                     `/users/${userId}/quizzes/${quizId}/take`
                 );
-
                 setQuizTitle(data.title ?? "");
                 setQuestions(data.questions.map(mapQuestion));
-            } catch (e) {
+            } catch {
                 toast.error("Failed to load quiz");
             } finally {
                 setLoading(false);
             }
         };
-
         fetchQuiz();
     }, [userId, quizId]);
 
-    const question = questions[current];
-
-    if (loading) {
-        return (
-            <div style={{ padding: 40 }}>
-                <Sidebar />
-                <TopBar />
-                <h2>Loading quiz...</h2>
-            </div>
-        );
-    }
-
-    if (!questions.length || !question) {
-        return (
-            <div style={{ padding: 40 }}>
-                <Sidebar />
-                <TopBar />
-                <h2>No quiz data available</h2>
-            </div>
-        );
-    }
+    const submitQuiz = async (finalAnswers: number[]) => {
+        try {
+            await apiService.post(
+                `/users/${userId}/quizzes/${quizId}/submit`,
+                { answers: finalAnswers }
+            );
+            setFinished(true);
+        } catch {
+            toast.error("Failed to submit quiz. Please try again.");
+        }
+    };
 
     const handleNext = () => {
         if (selected === null) {
@@ -115,29 +91,44 @@ export default function PlayQuizPage() {
             return;
         }
 
-        const newAnswers = [...answers];
-        newAnswers[current] = selected;
+        const newAnswers = [...answers, selected + 1];
         setAnswers(newAnswers);
 
-        if (selected === question.answer) {
-            setScore((s) => s + 1);
-        }
-
         if (current === questions.length - 1) {
-            setFinished(true);
+            submitQuiz(newAnswers);
         } else {
             setCurrent((c) => c + 1);
             setSelected(null);
         }
     };
 
-    const restart = () => {
-        setCurrent(0);
-        setSelected(null);
-        setScore(0);
-        setFinished(false);
-        setAnswers([]);
-    };
+    if (loading) {
+        return (
+            <div style={{ display: "flex", minHeight: "100vh" }}>
+                <Sidebar />
+                <div style={{ flex: 1 }}>
+                    <TopBar />
+                    <div className="pageWrapper">
+                        <h2>Loading quiz...</h2>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!questions.length) {
+        return (
+            <div style={{ display: "flex", minHeight: "100vh" }}>
+                <Sidebar />
+                <div style={{ flex: 1 }}>
+                    <TopBar />
+                    <div className="pageWrapper">
+                        <h2>No quiz data available</h2>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (finished) {
         return (
@@ -145,67 +136,45 @@ export default function PlayQuizPage() {
                 <Sidebar />
                 <div style={{ flex: 1 }}>
                     <TopBar />
-
                     <div className="pageWrapper">
                         <div className="card">
-                            <h1>🎉 Finished</h1>
-                            <h2>
-                                Score: {score} / {questions.length}
-                            </h2>
-
-                            <Button onClick={restart}>Retry</Button>
+                            <h1>🎉 Finished!</h1>
+                            <p>Your answers have been submitted successfully.</p>
                             <Button onClick={() => router.push("/quiz")}>
-                                Back
+                                Back to Quizzes
                             </Button>
                         </div>
                     </div>
                 </div>
-
                 <ToastContainer />
             </div>
         );
     }
 
+    const question = questions[current];
+
     return (
         <div style={{ display: "flex", minHeight: "100vh" }}>
             <Sidebar />
-
             <div style={{ flex: 1 }}>
                 <TopBar />
-
                 <div className="pageWrapper">
                     <div className="card">
                         <h2>{quizTitle}</h2>
-
-                        <p>
-                            Question {current + 1} / {questions.length}
-                        </p>
-
+                        <p>Question {current + 1} / {questions.length}</p>
                         <h3>{question.text}</h3>
-
                         <div className="options">
                             {question.options.map((opt, idx) => (
                                 <div
                                     key={idx}
                                     onClick={() => setSelected(idx)}
-                                    className={
-                                        selected === idx
-                                            ? "option optionSelected"
-                                            : "option"
-                                    }
+                                    className={selected === idx ? "option optionSelected" : "option"}
                                 >
                                     {opt}
                                 </div>
                             ))}
                         </div>
-
-                        <div
-                            style={{
-                                marginTop: 20,
-                                display: "flex",
-                                justifyContent: "space-between",
-                            }}
-                        >
+                        <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between" }}>
                             <Button
                                 disabled={current === 0}
                                 onClick={() => {
@@ -215,17 +184,13 @@ export default function PlayQuizPage() {
                             >
                                 Back
                             </Button>
-
                             <Button onClick={handleNext}>
-                                {current === questions.length - 1
-                                    ? "Finish"
-                                    : "Next"}
+                                {current === questions.length - 1 ? "Finish" : "Next"}
                             </Button>
                         </div>
                     </div>
                 </div>
             </div>
-
             <ToastContainer />
         </div>
     );

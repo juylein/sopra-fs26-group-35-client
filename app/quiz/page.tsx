@@ -48,6 +48,18 @@ interface MyQuizSummaryDTO {
     results: QuizResultEntryDTO[] | null;
 }
 
+// ← bookTitle and bookCoverUrl added
+interface ReceivedQuizResultDTO {
+    quizId: number;
+    quizTitle: string;
+    difficulty: string | null;
+    scoreGot: number | null;
+    scoreTotal: number;
+    pending: boolean;
+    bookTitle?: string;
+    bookCoverUrl?: string;
+}
+
 const AVATAR_COLORS = [
     "#8b1a1a", "#2a7a4a", "#3a5a8b", "#5a5a5a",
     "#7a4a2a", "#4a2a7a", "#2a4a7a", "#7a2a4a",
@@ -56,8 +68,9 @@ const AVATAR_COLORS = [
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 type Difficulty = typeof DIFFICULTIES[number];
 
+let _qId = 0;
 const emptyQuestion = (): Question => ({
-    id: Date.now(),
+    id: ++_qId,
     text: "",
     options: [
         { label: "A", text: "" },
@@ -111,12 +124,13 @@ const Quiz: React.FC = () => {
     const [challenges, setChallenges]           = useState<NotificationGetDTO[]>([]);
     const [myQuiz, setMyQuiz]                   = useState<MyQuizSummaryDTO | null>(null);
     const [myQuizLoading, setMyQuizLoading]     = useState(true);
+    const [receivedResults, setReceivedResults] = useState<ReceivedQuizResultDTO[]>([]);
 
     const [bookModalOpen, setBookModalOpen]     = useState(false);
     const [shelves, setShelves]                 = useState<Shelf[]>([]);
     const [selectedBook, setSelectedBook]       = useState<Book | null>(null);
     const [selectedShelfId, setSelectedShelfId] = useState<number | null>(null);
-    const [booksMap, setBooksMap] = useState<Record<number, Book>>({});
+    const [booksMap, setBooksMap]               = useState<Record<number, Book>>({});
 
     const selectedShelf = shelves.find((s) => s.id === selectedShelfId) ?? null;
     const shelfBooks    = selectedShelf?.shelfBooks.map((sb) => sb.book) ?? [];
@@ -199,28 +213,37 @@ const Quiz: React.FC = () => {
             }
         };
         fetchLatestQuiz();
+        const interval = setInterval(fetchLatestQuiz, 30000);
+        return () => clearInterval(interval);
     }, [apiService, userId]);
 
     useEffect(() => {
         const fetchBook = async () => {
             if (!userId || !myQuiz?.bookId) return;
-    
             try {
-                const book = await apiService.get<Book>(
-                    `/books/${myQuiz.bookId}`
-                );
-    
-                setBooksMap({
-                    [book.id]: book,
-                });
+                const book = await apiService.get<Book>(`/books/${myQuiz.bookId}`);
+                setBooksMap({ [book.id]: book });
             } catch (e) {
                 console.error(e);
             }
         };
-    
         fetchBook();
     }, [myQuiz, userId]);
 
+    useEffect(() => {
+        const fetchReceived = async () => {
+            if (!userId) return;
+            try {
+                const data = await apiService.get<ReceivedQuizResultDTO[]>(`/users/${userId}/quizzes/received`);
+                setReceivedResults(data);
+            } catch {
+                setReceivedResults([]);
+            }
+        };
+        fetchReceived();
+        const interval = setInterval(fetchReceived, 30000);
+        return () => clearInterval(interval);
+    }, [apiService, userId]);
 
     const handleLogout = async (): Promise<void> => {
         try {
@@ -304,7 +327,6 @@ const Quiz: React.FC = () => {
                     })),
             };
 
-
             const createdQuiz = await apiService.post(
                 `/users/${userId}/quizzes`,
                 quizPayload
@@ -373,26 +395,39 @@ const Quiz: React.FC = () => {
                                                 </span>
                                             </div>
                                             <div className="quiz-challenge-actions">
-                                            <button
-                                            className="quiz-accept-btn"
-                                            onClick={async () => {
-                                                try {
-                                                    if (!userId) return;
-
-                                                    await apiService.put(
-                                                        `/users/${userId}/quizzes/${c.referenceId}/accept`,
-                                                        {}
-                                                    );
-
-                                                    router.push(`/quiz/play/${c.referenceId}`);
-                                                } catch (error) {
-                                                    handleErrorMessage(error);
-                                                }
-                                            }}
-                                        >
-                                            Accept and Start Quiz
-                                        </button>
-                                                <button className="quiz-decline-btn">Decline</button>
+                                                <button
+                                                    className="quiz-accept-btn"
+                                                    onClick={async () => {
+                                                        try {
+                                                            if (!userId) return;
+                                                            await apiService.put(
+                                                                `/users/${userId}/quizzes/${c.referenceId}/accept`,
+                                                                {}
+                                                            );
+                                                            await apiService.delete(`/users/${userId}/notifications/${c.id}`);
+                                                            setChallenges(prev => prev.filter(n => n.id !== c.id));
+                                                            router.push(`/quiz/play/${c.referenceId}`);
+                                                        } catch (error) {
+                                                            handleErrorMessage(error);
+                                                        }
+                                                    }}
+                                                >
+                                                    Accept and Start Quiz
+                                                </button>
+                                                <button
+                                                    className="quiz-decline-btn"
+                                                    onClick={async () => {
+                                                        try {
+                                                            if (!userId) return;
+                                                            await apiService.delete(`/users/${userId}/notifications/${c.id}`);
+                                                            setChallenges(prev => prev.filter(n => n.id !== c.id));
+                                                        } catch (error) {
+                                                            handleErrorMessage(error);
+                                                        }
+                                                    }}
+                                                >
+                                                    Decline
+                                                </button>
                                             </div>
                                         </div>
                                     ))
@@ -446,7 +481,6 @@ const Quiz: React.FC = () => {
 
                     <section>
                         <h2 className="quiz-section-title">My quizzes</h2>
-
                         {myQuizLoading ? (
                             <div className="quiz-my-card quiz-my-card--skeleton">
                                 <div className="quiz-my-header">
@@ -467,16 +501,13 @@ const Quiz: React.FC = () => {
                         ) : (
                             <div key={myQuiz.id} className="quiz-my-card">
                                 <div className="quiz-my-header">
-                                <div className="quiz-my-cover">
-                                    {booksMap[myQuiz.bookId ?? 0]?.coverUrl ? (
-                                        <img
-                                            src={booksMap[myQuiz.bookId!].coverUrl!}
-                                            alt="cover"
-                                        />
-                                    ) : (
-                                        <div className="quiz-my-cover-placeholder" />
-                                    )}
-                                </div>
+                                    <div className="quiz-my-cover">
+                                        {booksMap[myQuiz.bookId ?? 0]?.coverUrl ? (
+                                            <img src={booksMap[myQuiz.bookId!].coverUrl!} alt="cover" />
+                                        ) : (
+                                            <div className="quiz-my-cover-placeholder" />
+                                        )}
+                                    </div>
                                     <div className="quiz-my-info">
                                         <div className="quiz-my-title">{myQuiz.title}</div>
                                         <div className="quiz-my-meta">
@@ -512,9 +543,7 @@ const Quiz: React.FC = () => {
                                                     <div className="quiz-my-bar-track">
                                                         <div
                                                             className="quiz-my-bar-fill"
-                                                            style={{
-                                                                width: `${Math.round(((r.scoreGot ?? 0) / r.scoreTotal) * 100)}%`,
-                                                            }}
+                                                            style={{ width: `${Math.round(((r.scoreGot ?? 0) / r.scoreTotal) * 100)}%` }}
                                                         />
                                                     </div>
                                                     <span className="quiz-my-score">{r.scoreGot}/{r.scoreTotal}</span>
@@ -527,6 +556,62 @@ const Quiz: React.FC = () => {
                         )}
                     </section>
 
+                    <section>
+                        <h2 className="quiz-section-title">Quizzes I received</h2>
+                        {receivedResults.length === 0 ? (
+                            <div className="quiz-my-card">
+                                <p className="quiz-lb-empty">No quizzes received yet.</p>
+                            </div>
+                        ) : (
+                            receivedResults.map((r, idx) => (
+                                <div key={`${r.quizId}-${idx}`} className="quiz-my-card">
+                                    <div className="quiz-my-header">
+                                        {/* ← book cover */}
+                                        <div className="quiz-my-cover">
+                                            {r.bookCoverUrl ? (
+                                                <img src={r.bookCoverUrl} alt="cover" />
+                                            ) : (
+                                                <div className="quiz-my-cover-placeholder" />
+                                            )}
+                                        </div>
+                                        <div className="quiz-my-info">
+                                            <div className="quiz-my-title">{r.quizTitle}</div>
+                                            {/* ← book title */}
+                                            {r.bookTitle && (
+                                                <div className="quiz-my-meta">{r.bookTitle}</div>
+                                            )}
+                                            <div className="quiz-my-tags">
+                                                {r.difficulty && (
+                                                    <span className={`quiz-diff-badge quiz-diff-${r.difficulty.toLowerCase()}`}>
+                                                        {r.difficulty.charAt(0).toUpperCase() + r.difficulty.slice(1).toLowerCase()}
+                                                    </span>
+                                                )}
+                                                <span className="quiz-my-qcount">{r.scoreTotal} questions</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="quiz-my-results">
+                                        <div className="quiz-my-result-row">
+                                            {r.pending ? (
+                                                <span className="quiz-my-pending">not completed yet</span>
+                                            ) : (
+                                                <>
+                                                    <div className="quiz-my-bar-track">
+                                                        <div
+                                                            className="quiz-my-bar-fill"
+                                                            style={{ width: `${Math.round(((r.scoreGot ?? 0) / r.scoreTotal) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="quiz-my-score">{r.scoreGot}/{r.scoreTotal}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </section>
+
                     <section className="quiz-section">
                         <h1 className="quiz-page-title">Create Quiz</h1>
                         <p className="quiz-page-subtitle">
@@ -534,18 +619,11 @@ const Quiz: React.FC = () => {
                         </p>
 
                         <div className="quiz-book-picker">
-                            <button
-                                className="quiz-book-pick-btn"
-                                onClick={() => setBookModalOpen(true)}
-                            >
+                            <button className="quiz-book-pick-btn" onClick={() => setBookModalOpen(true)}>
                                 {selectedBook ? (
                                     <>
                                         {selectedBook.coverUrl ? (
-                                            <img
-                                                src={selectedBook.coverUrl}
-                                                alt={selectedBook.name}
-                                                className="quiz-pick-btn-cover"
-                                            />
+                                            <img src={selectedBook.coverUrl} alt={selectedBook.name} className="quiz-pick-btn-cover" />
                                         ) : (
                                             <div className="quiz-pick-btn-cover quiz-pick-btn-cover-placeholder" />
                                         )}
