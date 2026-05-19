@@ -10,8 +10,6 @@ import Sidebar from "@/components/sidebar";
 import { Button } from "antd";
 import { toast, ToastContainer } from "react-toastify";
 import { Review } from "@/types/review";
-import { Shelf } from "@/types/shelf";
-import { ShelfBook } from "@/types/shelfbook";
 import "@/styles/library.css";
 
 interface Book {
@@ -25,11 +23,6 @@ interface Book {
   description: string | null;
   coverUrl: string | null;
   reviews: Review[] | null;
-}
-
-// Extended interface for shelf with books
-interface ShelfWithBooks extends Shelf {
-  shelfBooks: (ShelfBook & { book: Book })[];
 }
 
 const Book: React.FC = () => {
@@ -137,31 +130,36 @@ const Book: React.FC = () => {
   }, [id, apiService]);
 
   // Fetch shelves that contain this book
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   useEffect(() => {
-    if (!userId || !id || !book) return;
+    if (!userId || !id) return;
     
-    // Use the book's googleId from the fetched book data
-    const googleBookId = book.googleId;
+    // The id from URL is already the Google ID (string)
+    const googleBookId = typeof id === 'string' ? id : String(id);
     
-    if (!googleBookId) {
-      console.log("No googleId for this book");
-      setBookShelves([]);
-      return;
-    }
+    console.log("Looking for Google Book ID:", googleBookId);
     
     const fetchBookShelves = async () => {
       try {
-        const shelves = await apiService.get<ShelfWithBooks[]>(`/users/${userId}/library/shelves`);
+        // Fetch all user's shelves
+        const shelves = await apiService.get<any[]>(`/users/${userId}/library/shelves`);
         
+        // Filter shelves that contain this book
         const containingShelves = shelves.filter((shelf) => {
           if (shelf.shelfBooks && Array.isArray(shelf.shelfBooks)) {
-            return shelf.shelfBooks.some((shelfBook) => {
-              // Compare using googleId (string) instead of id (number)
-              return shelfBook.book?.googleId === googleBookId;
+            return shelf.shelfBooks.some((shelfBook: any) => {
+              // Compare the Google ID (string) directly
+              const matches = shelfBook.book?.id === googleBookId;
+              if (matches) {
+                console.log(`Found book in shelf: ${shelf.name}`);
+              }
+              return matches;
             });
           }
           return false;
         });
+        
+        console.log("Containing shelves:", containingShelves.map(s => ({ id: s.id, name: s.name })));
         
         setBookShelves(containingShelves.map((shelf) => ({ 
           id: shelf.id, 
@@ -173,7 +171,8 @@ const Book: React.FC = () => {
     };
     
     fetchBookShelves();
-  }, [userId, id, book, apiService]);
+  }, [userId, id, apiService]);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   if (!isAuthorized) {
     return <ToastContainer position="top-center" />;
