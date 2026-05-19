@@ -179,3 +179,13 @@ reason).
 | **@minhgou**                      | 07.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/118/changes/c79976ca5159be170ea5ade875095785ca539711 | Added temporary stats card section in dashboard. | Layout for stats section in dashboard | 
 | **@minhgou**                      | 10.05.2026   | https://github.com/juylein/sopra-fs26-group-35-client/pull/118/changes/44a1d7e102861daa46ef67d1e2623f2d6d51a37c | Added real time stats and pie charts | Added two pie charts and reading number and quiz points for user to see in dashboard. | 
 ---
+
+
+## Contributions Week 7 - [13.05.2026] to [20.05.2026]
+
+| **Student**                       | **Date**    | **Link to Commit** | **Description**                                                                                                                                                                                                                                 | **Relevance**                       |
+|-----------------------------------|-------------| ------------------ |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------------------------------- |
+| **@minhgou** | 18.05.2026 | https://github.com/juylein/sopra-fs26-group-35-client/pull/125/changes/ab12ae02c22fd36df7b1d3ce24a537e4d98a089a | Added style changes to default shelves, edit and delete books design UI change | This contribution improves the visual distinction between default and custom shelves in the library view. The edit and delete buttons now have consistent styling, making the UI more intuitive and user-friendly. |
+| **@minhgou** | 18.05.2026 | https://github.com/juylein/sopra-fs26-group-35-client/pull/125/changes/661a908aa78bc36b5d6ac737d6318381bb87e42f| Improve register page CSS | Enhanced the visual design and layout of the registration page, making it more consistent with the application's overall design language and improving the user onboarding experience. |
+| **@minhgou** | 19.05.2026 | https://github.com/juylein/sopra-fs26-group-35-client/pull/125/changes/dfe086b9f9a8864c03c47cd41d14a46b45adfca2 | Added which shelf book is in when looking at book description for library | This feature enhances user experience by showing which shelves contain a specific book directly on the book details page. Users can now quickly see and navigate to all shelves where a book is stored without having to search through each shelf manually. |
+---

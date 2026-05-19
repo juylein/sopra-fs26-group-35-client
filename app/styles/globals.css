@@ -401,3 +401,7 @@ a {
 .session-toast-progress {
   background: #b45309; 
 }
+
+.friends-search {
+  padding: 8px 12px;
+}
