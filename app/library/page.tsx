@@ -15,7 +15,7 @@ import { Shelf } from "@/types/shelf";
 const BOOKS_PER_ROW = 18;
 const MAX_ROWS = 1;
 const MAX_BOOKS_DISPLAYED = BOOKS_PER_ROW * MAX_ROWS;
-const EDIT_PAGE_SIZE = 8; // books per page in edit list view
+const EDIT_PAGE_SIZE = 5;
 
 const Library: React.FC = () => {
   const router = useRouter();
