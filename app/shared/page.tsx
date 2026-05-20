@@ -300,18 +300,6 @@ const SharedReadingSession: React.FC = () => {
                                                         <div style={{ fontSize: "0.8rem", color: "#8a7d6a" }}>
                                                             @{f.username}
                                                         </div>
-
-                                                        <div
-                                                            style={{
-                                                                fontSize: "0.75rem",
-                                                                color:
-                                                                    f.status === "ONLINE"
-                                                                        ? "#3a6b2a"
-                                                                        : "#8a7d6a",
-                                                            }}
-                                                        >
-                                                            {f.status === "ONLINE" ? "● Online" : "○ Offline"}
-                                                        </div>
                                                     </div>
 
                                                     {isSelected && (

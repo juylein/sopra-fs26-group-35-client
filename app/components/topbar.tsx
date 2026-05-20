@@ -14,7 +14,6 @@ type Notification = {
     id: number;
     type: NotificationType;
     message: string;
-    referenceId: number | null;
     read: boolean;
     createdAt: string;
 };
@@ -32,17 +31,21 @@ const TYPE_LABEL: Record<NotificationType, string> = {
     QUIZ_CHALLENGE:   "Quiz Challenge",
     FRIEND_ACTIVITY:  "Friend Activity",
     SHARED_SESSION:   "Shared Session",
-    SHELF_INVITATION: "Shelf Invitation"
+    SHELF_INVITATION: "Shelf Invitation",
 };
 
-const getRedirectPath = (type: NotificationType, referenceId: number | null): string | null => {
-    if (!referenceId) return null;
+const getRedirectPath = (type: NotificationType): string | null => {
     switch (type) {
-        case "FRIEND_REQUEST": return `/friends`;
-        case "QUIZ_CHALLENGE": return `/quiz/${referenceId}`;
-        case "SHARED_SESSION": return `/session/${referenceId}`;
-        case "FRIEND_ACTIVITY": return null;
-        default: return null;
+        case "FRIEND_REQUEST":
+        case "SHELF_INVITATION":
+            return `/friends`;
+        case "QUIZ_CHALLENGE":
+            return `/quiz`;
+        case "SHARED_SESSION":
+            return `/shared`;
+        case "FRIEND_ACTIVITY":
+        default:
+            return null;
     }
 };
 
@@ -80,7 +83,6 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
             const data = await apiService.get<Notification[]>(
                 `/users/${userId}/notifications`
             );
-            // Sort newest first on the frontend as a safeguard
             const sorted = [...data].sort(
                 (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
@@ -107,7 +109,7 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
     };
 
     const handleNotificationClick = (n: Notification) => {
-        const path = getRedirectPath(n.type, n.referenceId);
+        const path = getRedirectPath(n.type);
         if (path) {
             setOpen(false);
             router.push(path);
@@ -139,17 +141,6 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const grouped = notifications.reduce<Record<NotificationType, Notification[]>>(
-        (acc, n) => {
-            acc[n.type] = acc[n.type] ?? [];
-            acc[n.type].push(n);
-            return acc;
-        },
-        {} as Record<NotificationType, Notification[]>
-    );
-
-    const groupOrder: NotificationType[] = ["SHELF_INVITATION", "FRIEND_REQUEST", "QUIZ_CHALLENGE", "FRIEND_ACTIVITY", "SHARED_SESSION"];
-
     return (
         <header className="topbar">
             {title && <span className="topbar-title">{title}</span>}
@@ -179,7 +170,7 @@ export default function TopBar({ title, onLogout }: TopBarProps) {
                                 </div>
                             ) : (
                                 notifications.map((n) => {
-                                    const path = getRedirectPath(n.type, n.referenceId);
+                                    const path = getRedirectPath(n.type);
                                     return (
                                         <div
                                             key={n.id}
