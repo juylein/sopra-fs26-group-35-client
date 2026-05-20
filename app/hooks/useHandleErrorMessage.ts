@@ -6,7 +6,7 @@ import { ApplicationError } from "@/types/error";
 export const useHandleErrorMessage = () => {
   const message = useAppMessage();
 
-  const handleErrorMessage = (error: unknown) => {
+  const handleErrorMessage = (error: unknown, customMessage?: string) => {
     let errorMessage = "Something went wrong.";
 
     if (error instanceof Error) {
@@ -18,7 +18,7 @@ export const useHandleErrorMessage = () => {
     }
 
     message.error({
-      content: errorMessage,
+      content: customMessage ?? errorMessage,
       style: { color: "#000" },
     });
   };
