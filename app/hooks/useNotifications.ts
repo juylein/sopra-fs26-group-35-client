@@ -2,6 +2,7 @@ import { stompClient } from "@/utils/websocket";
 import { useCallback, useEffect, useState } from "react";
 import { NotificationEvent } from "@/types/notificationEvent";
 import { StompSubscription } from "@stomp/stompjs";
+import useLocalStorage from "./useLocalStorage";
 
 export interface UseNotificationsResult {
     notificationQueue: NotificationEvent[];
@@ -10,6 +11,7 @@ export interface UseNotificationsResult {
 }
 
 export const useNotifications = (): UseNotificationsResult => {
+    const { value: localStorageUserId } = useLocalStorage<string>("id", "");
     const [userId, setUserId] = useState<string | undefined>(undefined);
     const [notificationQueue, setNotificationQueue] = useState<NotificationEvent[]>([]);
 
@@ -23,7 +25,13 @@ export const useNotifications = (): UseNotificationsResult => {
     }, [notificationQueue]);
 
     useEffect(() => {
-        if (userId == null) return;
+        if (!localStorageUserId || userId) return;
+        console.warn(`reconnecting ${userId} based on ${localStorageUserId}`);
+        setUserId(localStorageUserId);
+    }, [localStorageUserId]);
+
+    useEffect(() => {
+        if (!userId) return;
 
         let subscription: StompSubscription;
 
@@ -54,7 +62,7 @@ export const useNotifications = (): UseNotificationsResult => {
         };
 
     }, [userId]);
-
+    
     return {
         notificationQueue,
         popNotification,

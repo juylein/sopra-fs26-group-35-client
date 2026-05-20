@@ -12,6 +12,7 @@ import "@/styles/library.css"
 import { useAppMessage } from "@/hooks/useAppMessage";
 import { Shelf } from "@/types/shelf";
 import { User } from "@/types/user";
+import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 
 // How many books fit per row — adjust to match actual .book width + gap
 const BOOKS_PER_ROW = 18;
@@ -22,6 +23,7 @@ const Library: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const messageApi = useAppMessage();
+  const { handleErrorMessage } = useHandleErrorMessage();
 
   const [loadingPath] = useState<string | null>(null);
 
@@ -149,8 +151,7 @@ const Library: React.FC = () => {
 
       messageApi.success("Book removed");
     } catch (error) {
-      console.error(error);
-      messageApi.error("Failed to remove book");
+      handleErrorMessage(error, "You have already started a session for this book, therefore cannot be deleted.");
     }
   };
 

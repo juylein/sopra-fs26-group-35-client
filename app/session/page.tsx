@@ -14,10 +14,12 @@ import { ShelfBook } from "@/types/shelfbook";
 import { useSearchParams } from "next/navigation";
 import "@/styles/session.css";
 import "@/styles/dashboard.css";
+import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 
 const ReadingSessionComponent = () => {
     const router = useRouter();
     const apiService = useApi();
+    const { handleErrorMessage } = useHandleErrorMessage();
     const searchParams = useSearchParams();
     const autoShelfBookId = searchParams.get("shelfBookId");
     const autoStarted = React.useRef(false);
@@ -32,8 +34,7 @@ const ReadingSessionComponent = () => {
     const [startPage, setStartPage] = useState<number>(0);
     const [seconds, setSeconds] = useState(0);
     const [running, setRunning] = useState(false);
-    const[closeSession,setCloseSession] = useState(false);
-    const[isModalOpen,setIsModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState(false);
 
     const handleLogout = async (): Promise<void> => {
@@ -62,16 +63,17 @@ const ReadingSessionComponent = () => {
 
     useEffect(() => {
         if (!userId || session) return;
+
         const fetchShelves = async () => {
             try {
                 const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
                 setShelves(data);
-            } catch (err) {
-                console.error(err);
+            } catch (error) {
+                handleErrorMessage(error);
             }
         };
         fetchShelves();
-    }, [userId, apiService]);
+    }, [userId, session, apiService]);
 
     useEffect(() => {
         if (!autoShelfBookId || shelves.length === 0 || session || autoStarted.current) return;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApi } from "@/hooks/useApi";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { User } from "@/types/user";
-import { Button } from "antd";
+import { Button, Modal } from "antd";
 import Sidebar from "@/components/sidebar";
 import { toast, ToastContainer } from "react-toastify";
 import TopBar from "@/components/topbar";
@@ -40,6 +40,7 @@ const SharedReadingSession: React.FC = () => {
     const [friends, setFriends] = useState<User[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [showBookModal, setShowBookModal] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Timer — shared session means everyone's timer ticks together
     const [seconds, setSeconds] = useState(0);
@@ -123,10 +124,10 @@ const SharedReadingSession: React.FC = () => {
 
             case NotificationEventType.SHARED_SESSION_JOIN:
                 const shelfBook = notification.payload.shelfBook;
-                const p = friends.find(x => String(x.id) == notification.payload.from)
+                const p = friends.find(x => String(x.id) === String(notification.payload.from));
 
                 const newParticipant: SessionParticipant = {
-                    id: notification.payload.from,
+                    id: String(notification.payload.from),
                     name: p?.name ?? "Unknown",
                     initial: p?.username?.substring(0, 2).toUpperCase() ?? "??",
                     color: '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0'), // generate random color
@@ -140,13 +141,13 @@ const SharedReadingSession: React.FC = () => {
             case NotificationEventType.SHARED_SESSION_PAGE:
                 setActiveParticipants(prev =>
                     prev.map(participant =>
-                        participant.id == notification.payload.from
+                        String(participant.id) === String(notification.payload.from)
                             ? { ...participant, page: notification.payload.numberOfPages ?? 0 }
                             : participant
                     ));  
                 break;
             case NotificationEventType.SHARED_SESSION_QUIT:
-                setActiveParticipants(prev => prev.filter(x => x.id === notification.payload.from))
+                setActiveParticipants(prev => prev.filter(x => String(x.id) !== String(notification.payload.from)))
                 break;
         }
     }, [notificationQueue, popNotification]);
@@ -222,7 +223,7 @@ const SharedReadingSession: React.FC = () => {
 
     return (
         <div className="dashboard-root">
-            <Sidebar />
+            <Sidebar disabled={view === "active" } />
 
             {/* Top Bar */}
             <TopBar onLogout={handleLogout} />
@@ -342,21 +343,33 @@ const SharedReadingSession: React.FC = () => {
                                         handleStartSession={async book => {
                                             setSelectedBook(book);
                                             const participants = await apiService.get<SessionParticipantGetDTO[]>(`/users/${userId}/sessions/${sessionId}/participants`);
-                                            const actives: SessionParticipant[] = participants.filter(x => x.user.id !== +userId).map(x => ({
-                                                id: String(x.user.id),
-                                                name: x.user.name ?? "Unknown",
-                                                initial: x.user.username?.substring(0, 2).toUpperCase() ?? "??",
-                                                color: '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0'), // generate random color
-                                                book: x.book.name,
-                                                page: x.pagesRead ?? 0,
-                                                total: x.book.pages ?? 0,
-                                            }));
+
+                                            const actives: SessionParticipant[] = participants
+                                                .filter(x => String(x.user.id) !== userId)
+                                                .map(x => {
+                                                    const isFriend = !!friends.find(p => String(p.id) === String(x.user.id));
+                                                    const name = x.user.name ?? "";
+                                                    const username = x.user.username ?? "";
+
+                                                    return {
+                                                        id: String(x.user.id),
+                                                        name: isFriend ? name : "Unknown",
+                                                        initial: isFriend ? username.substring(0, 2).toUpperCase() : "??",
+                                                        color: '#'+(Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0'), // generate random color
+                                                        book: x.book.name,
+                                                        page: x.pagesRead ?? 0,
+                                                        total: x.book.pages ?? 0,
+                                                    }
+                                            });
                                             
                                             setActiveParticipants(actives)
                                             await handleStartSession(book);
 
                                         }}
-                                        onClose={() => setShowBookModal(false)}
+                                        onClose={() => {
+                                            setSessionId(null);
+                                            setShowBookModal(false);
+                                        }}
                                         
                                     />
                                 )}
@@ -528,7 +541,7 @@ const SharedReadingSession: React.FC = () => {
                             <div style={{ textAlign: "center", marginTop: 8 }}>
                                 <Button
                                     className="bookshelf-session-btn-pause"
-                                    onClick={handleEndSession}
+                                    onClick={() => setIsModalOpen(true)}
                                     style={{ minWidth: 200, height: 44, fontSize: "1rem" }}
                                 >
                                     Quit Session
@@ -542,6 +555,29 @@ const SharedReadingSession: React.FC = () => {
 
                 </div>
             </div>
+            <Modal
+                title="Leave session?"
+                open={isModalOpen}
+                onCancel={() => setIsModalOpen(false)}
+                footer={[
+                    <Button key="cancel" onClick={() => setIsModalOpen(false)}>
+                        Cancel
+                    </Button>,
+                    <Button
+                        key="confirm"
+                        type="primary"
+                        danger
+                        onClick={async () => {
+                            await handleEndSession();
+                            setIsModalOpen(false);
+                        }}
+                    >
+                        Yes, finish session
+                    </Button>,
+                ]}
+>
+                 <p>Are you sure you want to leave this reading session?</p>
+            </Modal>
             <ToastContainer position="top-center" />
         </div>
     );

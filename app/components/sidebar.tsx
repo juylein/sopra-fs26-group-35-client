@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import "@/styles/sidebar.css"
 
-const Sidebar = () => {
+const Sidebar = ({ disabled }: { disabled?: boolean }) => {
     const router = useRouter();
     const pathname = usePathname();
     const params = useParams();
@@ -50,6 +50,7 @@ const Sidebar = () => {
                 position: "fixed",
                 left: 0,
                 top: 0,
+                pointerEvents: disabled ? "none" : "auto",
             }}
         >
             {/* Logo */}
