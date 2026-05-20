@@ -48,6 +48,9 @@ const Library: React.FC = () => {
   // For viewing members
   const [membersModalShelf, setMembersModalShelf] = useState<Shelf | null>(null);
 
+  // For confirming shared shelf deletion
+  const [deleteConfirmShelf, setDeleteConfirmShelf] = useState<Shelf | null>(null);
+
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
 
@@ -132,6 +135,17 @@ const Library: React.FC = () => {
     } catch (error) {
       console.error(error);
       messageApi.error("Failed to delete shelf");
+    }
+  };
+
+  const handleLeaveSharedShelf = async (shelfId: number) => {
+    try {
+      await apiService.delete(`/users/${userId}/library/shared-shelves/${shelfId}`);
+      messageApi.success("Left shared shelf");
+      setShelves((prev) => prev.filter((s) => s.id !== shelfId));
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to leave shelf");
     }
   };
 
@@ -304,7 +318,11 @@ const Library: React.FC = () => {
                     {/* Delete only for custom shelves */}
                     {!isDefault && (
                       <button
-                        onClick={() => handleDeleteShelf(shelf.id)}
+                        onClick={() =>
+                          shelf.shared
+                            ? setDeleteConfirmShelf(shelf)
+                            : handleDeleteShelf(shelf.id)
+                        }
                         className="delete-bookshelf-btn"
                       >
                         Delete
@@ -524,6 +542,43 @@ const Library: React.FC = () => {
             </div>
             <div className="modal-actions" style={{ marginTop: 16 }}>
               <button className="primary-btn" onClick={() => setMembersModalShelf(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm delete shared shelf modal */}
+      {deleteConfirmShelf !== null && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirmShelf(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            {(deleteConfirmShelf.memberUsernames?.length ?? 0) <= 1 ? (
+              <>
+                <h2>Delete shared shelf?</h2>
+                <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+                  You are the last member. Deleting will permanently remove <strong>{deleteConfirmShelf.name}</strong>.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Leave shared shelf?</h2>
+                <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+                  This will remove <strong>{deleteConfirmShelf.name}</strong> from your library. Other members will not be affected.
+                </p>
+              </>
+            )}
+            <div className="modal-actions">
+              <button
+                className="delete-bookshelf-btn"
+                style={{ position: "static" }}
+                onClick={async () => {
+                  const id = deleteConfirmShelf.id;
+                  setDeleteConfirmShelf(null);
+                  await handleLeaveSharedShelf(id);
+                }}
+              >
+                {(deleteConfirmShelf.memberUsernames?.length ?? 0) <= 1 ? "Delete shelf" : "Leave shelf"}
+              </button>
+              <button className="primary-btn" onClick={() => setDeleteConfirmShelf(null)}>Cancel</button>
             </div>
           </div>
         </div>

@@ -67,7 +67,7 @@ const MY_QUIZZES: MyQuiz[] = [
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 type Difficulty = typeof DIFFICULTIES[number];
 
-let _qId = 0;
+const _qId = 0;
 const emptyQuestion = (): Question => ({
     id: Date.now(),
     text: "",
@@ -199,7 +199,7 @@ const Quiz: React.FC = () => {
 
     const isQuizValid =
         quizTitle.trim() !== "" &&
-        selectedBook !== null &&
+        SELECTED_BOOK !== null &&
         questions.some(
             (q) =>
                 q.text.trim() !== "" &&

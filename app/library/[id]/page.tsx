@@ -47,8 +47,11 @@ const ShelfPage: React.FC = () => {
     const fetchShelf = async () => {
       setLoadingData(true);
       try {
-        const data = await apiService.get<Shelf[]>(`/users/${userId}/library/shelves`);
-        const found = data.find((s) => s.id === Number(shelfId));
+        const [privateShelves, sharedShelves] = await Promise.all([
+          apiService.get<Shelf[]>(`/users/${userId}/library/shelves`),
+          apiService.get<Shelf[]>(`/users/${userId}/library/shared-shelves`),
+        ]);
+        const found = [...privateShelves, ...sharedShelves].find((s) => s.id === Number(shelfId));
         if (found) {
           setShelf(found);
           setShelfName(found.name);

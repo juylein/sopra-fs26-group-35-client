@@ -184,7 +184,6 @@
     font-size: 13px !important;
     height: 40px !important;
     width: 90px !important;
-    margin-left: 16px !important;
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -366,7 +365,8 @@
 }
 
 .shelf-action-btns .edit-bookshelf-btn,
-.shelf-action-btns .delete-bookshelf-btn {
+.shelf-action-btns .delete-bookshelf-btn,
+.shelf-action-btns .share-bookshelf-btn {
   position: static !important;
 }
 
