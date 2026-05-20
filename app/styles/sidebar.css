@@ -7,6 +7,11 @@
     color: var(--sidebar-text);
     gap: 10px;
     font-size: 3.0rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
 }
 
 .logo-title {

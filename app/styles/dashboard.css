@@ -610,6 +610,7 @@
   border: 1px solid #e0d8cc;
   border-radius: 12px;
   padding: 22px 28px;
+    overflow: hidden;
 }
 
 .stats-card-title {
@@ -669,6 +670,8 @@
   display: flex;
   align-items: center;
   gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .stats-genre-legend {
@@ -681,11 +684,11 @@
 }
 
 .stats-legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  white-space: nowrap; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    white-space: nowrap;
 }
 
 .stats-legend-label {
@@ -693,6 +696,7 @@
   color: #333;
   overflow: hidden;
   text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .stats-legend-pct {
@@ -703,10 +707,10 @@
 }
 
 .stats-body {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  flex-wrap: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
 }
 
 .stats-genre {
@@ -723,6 +727,7 @@
   align-items: stretch;
   flex: 0 0 160px;
   gap: 0;
+    min-width: 120px;
 }
 
 .stats-legend-dot {
@@ -739,4 +744,46 @@
     flex-direction: column;
     align-items: center;
     flex: 1;
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 860px) {
+    .stats-body {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 20px;
+    }
+
+    .stats-vertical-divider {
+        display: none;
+    }
+
+    .stats-metrics {
+        flex: unset;
+        flex-direction: row;
+        justify-content: center;
+        border-bottom: 1px solid #e0d8cc;
+        padding-bottom: 20px;
+    }
+
+    .stats-divider {
+        display: none;
+    }
+
+    .stats-metric {
+        flex: 1;
+    }
+
+    .stats-chart-section {
+        min-width: unset;
+        width: 100%;
+        border-bottom: 1px solid #e0d8cc;
+        padding-bottom: 20px;
+    }
+
+    .stats-chart-section:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
 }

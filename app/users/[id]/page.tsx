@@ -64,6 +64,7 @@ const Dashboard: React.FC = () => {
     const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
     const { handleErrorMessage } = useHandleErrorMessage();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const isOwnProfile = String(id) === String(userId);
 
     // Shelves state
     const [shelves, setShelves] = useState<Shelf[]>([]);
@@ -326,11 +327,16 @@ const Dashboard: React.FC = () => {
                                     user.bio
                                 ) : (
                                     <span style={{ color: "#bbb" }}>
-                                        No bio yet —{" "}
-                                        <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
-                                            add one
-                                        </span>
-                                    </span>
+                No bio yet
+                                        {isOwnProfile && (
+                                            <>
+                                                {" —"}{" "}
+                                                <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
+                            add one
+                        </span>
+                                            </>
+                                        )}
+            </span>
                                 )}
                             </div>
                         </div>
@@ -343,11 +349,16 @@ const Dashboard: React.FC = () => {
                                     user.genres.join(", ")
                                 ) : (
                                     <span style={{ color: "#bbb" }}>
-                                        No favourite genres yet —{" "}
-                                        <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
-                                            add them
-                                        </span>
-                                    </span>
+                No favourite genres yet
+                                        {isOwnProfile && (
+                                            <>
+                                                {" —"}{" "}
+                                                <span className="profile-add-link" onClick={() => router.push(`/users/${id}/edit`)}>
+                            add them
+                        </span>
+                                            </>
+                                        )}
+            </span>
                                 )}
                             </div>
                         </div>
@@ -375,55 +386,57 @@ const Dashboard: React.FC = () => {
                             <div className="bookshelf-title">{user?.name ?? "User"}&apos;s Bookshelf</div>
                         </div>
 
-                        <div className="bookshelf-session">
-                            {latestSessionEmpty ? (
-                                <div className="bookshelf-session-empty">
-                                    No reading session yet — start one to see it here.
-                                </div>
-                            ) : latestSession ? (
-                                <>
-                                    <div className="bookshelf-session-cover">
-                                        {latestSession.coverUrl && (
-                                            <img
-                                                src={latestSession.coverUrl}
-                                                alt={latestSession.bookTitle}
-                                                className="bookshelf-session-cover-img"
-                                            />
-                                        )}
+                        {isOwnProfile && (
+                            <div className="bookshelf-session">
+                                {latestSessionEmpty ? (
+                                    <div className="bookshelf-session-empty">
+                                        No reading session yet — start one to see it here.
                                     </div>
-                                    <div className="bookshelf-session-info">
-                                        <div className="bookshelf-session-title">{latestSession.bookTitle}</div>
-                                        {(() => {
-                                            const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
-                                            const shelfBook = allShelfBooks.find((sb) => sb.id === latestSession.shelfBookId);
-                                            const pct = shelfBook?.book.pages
-                                                ? Math.round(((shelfBook.pagesRead ?? 0) / shelfBook.book.pages) * 100)
-                                                : 0;
-                                            return (
-                                                <>
-                                                    <div className="bookshelf-session-subtitle">
-                                                        Page {latestSession.pagesRead ?? 0} of {shelfBook?.book.pages ?? "?"}
-                                                    </div>
-                                                    <div className="bookshelf-progress-bar">
-                                                        <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
-                                                    </div>
-                                                    <div className="bookshelf-progress-label">{pct}% complete</div>
-                                                </>
-                                            );
-                                        })()}
-                                    </div>
-                                    <Button
-                                        className="bookshelf-session-btn-resume"
-                                        onClick={handleResume}
-                                        loading={resumeLoading}
-                                    >
-                                        Resume Reading
-                                    </Button>
-                                </>
-                            ) : (
-                                <div className="bookshelf-session-empty">Loading...</div>
-                            )}
-                        </div>
+                                ) : latestSession ? (
+                                    <>
+                                        <div className="bookshelf-session-cover">
+                                            {latestSession.coverUrl && (
+                                                <img
+                                                    src={latestSession.coverUrl}
+                                                    alt={latestSession.bookTitle}
+                                                    className="bookshelf-session-cover-img"
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="bookshelf-session-info">
+                                            <div className="bookshelf-session-title">{latestSession.bookTitle}</div>
+                                            {(() => {
+                                                const allShelfBooks = shelves.flatMap((s) => s.shelfBooks ?? []);
+                                                const shelfBook = allShelfBooks.find((sb) => sb.id === latestSession.shelfBookId);
+                                                const pct = shelfBook?.book.pages
+                                                    ? Math.round(((shelfBook.pagesRead ?? 0) / shelfBook.book.pages) * 100)
+                                                    : 0;
+                                                return (
+                                                    <>
+                                                        <div className="bookshelf-session-subtitle">
+                                                            Page {latestSession.pagesRead ?? 0} of {shelfBook?.book.pages ?? "?"}
+                                                        </div>
+                                                        <div className="bookshelf-progress-bar">
+                                                            <div className="bookshelf-progress-fill" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                        <div className="bookshelf-progress-label">{pct}% complete</div>
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                        <Button
+                                            className="bookshelf-session-btn-resume"
+                                            onClick={handleResume}
+                                            loading={resumeLoading}
+                                        >
+                                            Resume Reading
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <div className="bookshelf-session-empty">Loading...</div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Shelf picker */}
                         <div className="shelf-picker">
