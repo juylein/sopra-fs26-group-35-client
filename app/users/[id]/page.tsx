@@ -109,7 +109,7 @@ const Dashboard: React.FC = () => {
     pagesRead: number;
     numFriends: number;
     readingPoints: number;
-    quizzPoints: number;
+    quizPoints: number;
     } | null>(null);
 
     // Fetch shelves on component mount
@@ -138,10 +138,14 @@ const Dashboard: React.FC = () => {
         if (isLoggingOut) return;
         const fetchLatest = async () => {
             try {
-                const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null }>(
+                const data = await apiService.get<{ id: number; bookTitle: string; coverUrl: string | null; shelfBookId: number; pagesRead: number | null } | null>(
                     `/users/${userId}/sessions/latest`
                 );
-                setLatestSession(data);
+                if (data && data.id) {
+                    setLatestSession(data);
+                } else {
+                    setLatestSessionEmpty(true);
+                }
             } catch {
                 setLatestSessionEmpty(true);
             }
@@ -259,7 +263,7 @@ const Dashboard: React.FC = () => {
                     pagesRead: number;
                     numFriends: number;
                     readingPoints: number;
-                    quizzPoints: number;
+                    quizPoints: number;
                 }>(`/users/${id}/statistics`);
 
                 console.log("Fetched user stats:", data);
@@ -552,7 +556,7 @@ const Dashboard: React.FC = () => {
                         <div className="stats-divider" />
                         <div className="stats-metric">
                             <div className="stats-metric-icon">🧠</div>
-                            <div className="stats-metric-value">{userStats?.quizzPoints ?? "—"}</div>
+                            <div className="stats-metric-value">{userStats?.quizPoints ?? "—"}</div>
                             <div className="stats-metric-label">Quiz points</div>
                         </div>
                         </div>
@@ -592,7 +596,7 @@ const Dashboard: React.FC = () => {
                             <PieChart
                                 slices={[
                                     { label: "Reading", value: userStats?.readingPoints ?? 0, color: "#3a5a8b" },
-                                    { label: "Quiz", value: userStats?.quizzPoints ?? 0, color: "#c4903a" },
+                                    { label: "Quiz", value: userStats?.quizPoints ?? 0, color: "#c4903a" },
                                 ]}
                                 showTotal
                                 centerLabel="total"

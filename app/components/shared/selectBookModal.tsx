@@ -12,14 +12,16 @@ interface SelectBookModalProps {
     userId: string;
     sessionId: string;
     handleStartSession: (selectedBook: ShelfBook) => Promise<void>
+    onClose: () => void;
 }
 
 const SelectBookModal = (props: SelectBookModalProps) => {
-    const { userId, sessionId, handleStartSession } = props;
+    const { userId, sessionId, handleStartSession,onClose } = props;
     const apiService = useApi();
     const { handleErrorMessage } = useHandleErrorMessage();
     const [books, setBooks] = useState<ShelfBook[] | null>(null);
     const [selectedBook, setSelectedBook] = useState<ShelfBook | null>(null);
+
 
     useEffect(() => {
         const fetchBooks = async () => {
@@ -40,6 +42,7 @@ const SelectBookModal = (props: SelectBookModalProps) => {
             title="Select a book and join the session!"
             open
             footer={null}
+            onCancel={onClose}
         >
         <Flex align="center" justify="center">
             {!books
