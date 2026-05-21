@@ -181,7 +181,7 @@ reason).
 ---
 
 
-## Contributions Week 7 - [13.05.2026] to [20.05.2026]
+## Contributions Week 7 - [13.05.2026] to [22.05.2026]
 
 | **Student**                       | **Date**    | **Link to Commit** | **Description**                                                                                                                                                                                                                                 | **Relevance**                       |
 |-----------------------------------|-------------| ------------------ |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ----------------------------------- |
@@ -204,4 +204,6 @@ reason).
 | **@juylein** | 15.05.2026 | https://github.com/juylein/sopra-fs26-group-35-client/commit/53af3db0c49be4c294e361c1f1c2892e723619fe | Connected latest quiz card to backend API endpoint, displays real quiz data instead of mock | Quiz page is now functional |
 | **@juylein** | 19.05.2026 | https://github.com/juylein/sopra-fs26-group-35-server/commit/c8af3ae98a5005e5b5481a03591e4f720f935e86 | Enhanced and refined quiz backend features | Quiz system improvements |
 | **@juylein** | 19.05.2026 | https://github.com/juylein/sopra-fs26-group-35-client/commit/d243e17a86a74e9c6a2ebb142e26282b17a05590 | Implemented UI section showing quizzes user has completed, connected quiz frontend to backend API | Completed quizzes display with live data |
+| **@juylein** | 21.05.2026 | https://github.com/juylein/sopra-fs26-group-35-server/commit/7dd1644ad293d32123f193dd01de45a0d1861803 | Writing Tests for Quiz Backend and extended DTOMapperTest | Increasing Test coverage to avoid problems |
+| **@juylein** | 20.05.2026 | https://github.com/juylein/sopra-fs26-group-35-client/commit/07557becad845b66a981085c5a3cca26805a8186 | Removed user status display, fixed notification routing, fixed CSS overflow issues, improved responsive design, fixed sidebar positioning, only show resume reading to own profile | Refinements and bug fixes across dashboard, notifications, and profile pages for nice user experience |
 ---
