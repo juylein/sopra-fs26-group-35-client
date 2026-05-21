@@ -1,45 +1,48 @@
 /* Register page */
-.register-container {
-    width: 50rem;
-    height: 50rem;
-    padding: 50px 50px;
-    padding-top: 80px;
-    border-radius: 16px;
-
-    font-size: 2rem !important;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
 .register-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    font-size: 1.5rem !important;
-    background: linear-gradient(180deg, #8B5100 0%, #251500 97.6%) !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.5rem !important;
+  padding: 40px 20px;       
+  box-sizing: border-box;
+  overflow-y: auto;          
 }
 
-.register-button {
-    background-color: #931824 !important;
-    width: 100%
+.register-container {
+  width: 48rem;
+  padding: 20px 30px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #8B5100 0%, #251500 97.6%);
+  font-size: 2rem !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 16px;     
 }
 
 .register-container .ant-input,
 .register-container .ant-input-password {
-    font-size: 1.3rem !important;
-    height: 50px !important;
-    background-color: white;
+  font-size: 1.3rem !important;
+  height: 50px !important;
+  background-color: white;
 }
 
 .register-container .ant-input,
 .register-container .ant-input-affix-wrapper {
-    display: flex !important;
-    align-items: center !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.register-button {
+  background-color: #931824 !important;
+  width: 100%;
 }
 
 .register-page .redirect-link {
-    color: white !important;
+  color: #333 !important;
+  margin-top: 16px;
+  font-size: 1rem;
 }
