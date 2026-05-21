@@ -12,31 +12,33 @@ import "@/styles/library.css"
 import { useAppMessage } from "@/hooks/useAppMessage";
 import { Shelf } from "@/types/shelf";
 import { User } from "@/types/user";
-import { useHandleErrorMessage } from "@/hooks/useHandleErrorMessage";
 
-// How many books fit per row — adjust to match actual .book width + gap
 const BOOKS_PER_ROW = 18;
 const MAX_ROWS = 1;
 const MAX_BOOKS_DISPLAYED = BOOKS_PER_ROW * MAX_ROWS;
+const EDIT_PAGE_SIZE = 5;
 
 const Library: React.FC = () => {
   const router = useRouter();
   const apiService = useApi();
   const messageApi = useAppMessage();
-  const { handleErrorMessage } = useHandleErrorMessage();
 
   const [loadingPath] = useState<string | null>(null);
-
   const [loadingData, setLoadingData] = useState<boolean>(false);
   const [shelves, setShelves] = useState<Shelf[]>([]);
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
   const [shelfName, setShelfName] = useState<string>("");
   const [editingShelfId, setEditingShelfId] = useState<number | null>(null);
-  const isDefaultShelf = (name: string) => ["To Read", "Recent Readings", "Read"].includes(name);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
-  // For renaming shelves
+  // Edit list pagination per shelf: shelfId -> page number
+  const [editPages, setEditPages] = useState<Record<number, number>>({});
+
   const [renamingShelfId, setRenamingShelfId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState<string>("");
+
+  const isDefaultShelf = (name: string) =>
+    ["To Read", "Recent Readings", "Read"].includes(name);
 
   // For sharing shelves
   const [friends, setFriends] = useState<User[]>([]);
@@ -46,11 +48,14 @@ const Library: React.FC = () => {
   // For viewing members
   const [membersModalShelf, setMembersModalShelf] = useState<Shelf | null>(null);
 
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  // For confirming shared shelf deletion
+  const [deleteConfirmShelf, setDeleteConfirmShelf] = useState<Shelf | null>(null);
 
   const { clear: clearToken } = useLocalStorage<string>("token", "");
   const { clear: clearId, value: userId } = useLocalStorage<string>("id", "");
-  
+
+  // ── Data fetching ─────────────────────────────────────
+
   const loadAllShelves = async () => {
     setLoadingData(true);
     try {
@@ -67,37 +72,41 @@ const Library: React.FC = () => {
   };
 
   useEffect(() => {
-    if (userId) loadAllShelves();
-  }, [apiService, userId]);
+    if (!userId) return;
+    loadAllShelves();
 
-  useEffect(() => {
     const fetchFriends = async () => {
-      if (!userId) return;
       try {
         const user = await apiService.get<User>(`/users/${userId}`);
         setFriends(user.friends ?? []);
       } catch {
-        // non-critical, friends list is for sharing only
+        // non-critical
       }
     };
     fetchFriends();
   }, [apiService, userId]);
 
-  const handleCreateNewShelf = async () => {
-    if (!shelfName.trim()) {
-      messageApi.error("Shelf name is required");
-      return;
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      toast.error("You need to be logged in to access this page.", {
+        autoClose: 2000,
+        onClose: () => router.push("/login"),
+      });
+    } else {
+      setIsAuthorized(true);
     }
+  }, [router]);
 
+  // ── Handlers ──────────────────────────────────────────
+
+  const handleCreateNewShelf = async () => {
+    if (!shelfName.trim()) { messageApi.error("Shelf name is required"); return; }
     try {
-      await apiService.post(`/users/${userId}/library/shelves`, { name: shelfName }); 
+      await apiService.post(`/users/${userId}/library/shelves`, { name: shelfName });
       messageApi.success("Shelf created!");
       setModalIsOpen(false);
       setShelfName("");
-
-      // Refresh shelves
       await loadAllShelves();
-
     } catch (error) {
       console.error(error);
       messageApi.error("Error creating shelf");
@@ -105,15 +114,10 @@ const Library: React.FC = () => {
   };
 
   const handleRenameShelf = async (shelfId: number) => {
-    if (!renameValue.trim()) {
-      messageApi.error("Shelf name cannot be empty");
-      return;
-    }
+    if (!renameValue.trim()) { messageApi.error("Shelf name cannot be empty"); return; }
     try {
       await apiService.put(`/users/${userId}/library/shelves/${shelfId}`, { name: renameValue });
-      setShelves((prev) =>
-        prev.map((s) => (s.id === shelfId ? { ...s, name: renameValue } : s))
-    );
+      setShelves((prev) => prev.map((s) => (s.id === shelfId ? { ...s, name: renameValue } : s)));
       messageApi.success("Shelf renamed!");
       setRenamingShelfId(null);
       setRenameValue("");
@@ -134,13 +138,20 @@ const Library: React.FC = () => {
     }
   };
 
+  const handleLeaveSharedShelf = async (shelfId: number) => {
+    try {
+      await apiService.delete(`/users/${userId}/library/shared-shelves/${shelfId}`);
+      messageApi.success("Left shared shelf");
+      setShelves((prev) => prev.filter((s) => s.id !== shelfId));
+    } catch (error) {
+      console.error(error);
+      messageApi.error("Failed to leave shelf");
+    }
+  };
+
   const handleRemoveBook = async (shelfId: number, bookId: number) => {
     try {
-      await apiService.delete(
-        `/users/${userId}/library/shelves/${shelfId}/books/${bookId}`
-      );
-
-      // Update UI instantly
+      await apiService.delete(`/users/${userId}/library/shelves/${shelfId}/books/${bookId}`);
       setShelves((prev) =>
         prev.map((s) =>
           s.id === shelfId
@@ -148,10 +159,10 @@ const Library: React.FC = () => {
             : s
         )
       );
-
       messageApi.success("Book removed");
     } catch (error) {
-      handleErrorMessage(error, "You have already started a session for this book, therefore cannot be deleted.");
+      console.error(error);
+      messageApi.error("Failed to remove book");
     }
   };
 
@@ -193,22 +204,10 @@ const Library: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (!localStorage.getItem("token")) {
-      toast.error("You need to be logged in to access this page.", {
-        autoClose: 2000,
-        onClose: () => router.push("/login"),
-      });
-    } else {
-      setIsAuthorized(true);
-    }
-  }, [router]);
+  // ── Helpers ───────────────────────────────────────────
 
-  if (!isAuthorized) {
-    return <ToastContainer position="top-center" />;
-  }
+  if (!isAuthorized) return <ToastContainer position="top-center" />;
 
-  // Utility to chunk books into rows for display
   const chunkBooks = (shelfBooks: Shelf["shelfBooks"]) => {
     const displayed = shelfBooks.slice(0, MAX_BOOKS_DISPLAYED);
     const rows: Shelf["shelfBooks"][] = [];
@@ -219,14 +218,17 @@ const Library: React.FC = () => {
     return rows;
   };
 
+  const getEditPage = (shelfId: number) => editPages[shelfId] ?? 0;
+  const setEditPage = (shelfId: number, page: number) =>
+    setEditPages((prev) => ({ ...prev, [shelfId]: page }));
+
+  // ── Render ────────────────────────────────────────────
+
   return (
     <div className="library-container">
       <Sidebar />
-
-      {/* Top Bar */}
       <TopBar onLogout={handleLogout} />
 
-      {/* Main Content */}
       <div className="main-content">
         <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -239,16 +241,31 @@ const Library: React.FC = () => {
               </p>
             </div>
 
-            {/* User Shelves */}
+            {/* Shelves */}
             {shelves.map((shelf) => {
               const rows = chunkBooks(shelf.shelfBooks);
               const hasMore = shelf.shelfBooks.length > MAX_BOOKS_DISPLAYED;
+              const isDefault = isDefaultShelf(shelf.name);
+              const isEditing = editingShelfId === shelf.id;
+
+              // Edit list pagination
+              const editPage = getEditPage(shelf.id);
+              const editTotalPages = Math.max(1, Math.ceil(shelf.shelfBooks.length / EDIT_PAGE_SIZE));
+              const pagedEditBooks = shelf.shelfBooks.slice(
+                editPage * EDIT_PAGE_SIZE,
+                (editPage + 1) * EDIT_PAGE_SIZE
+              );
 
               return (
-                <div key={shelf.id} className="section"
-                style={{ position: "relative", paddingTop: 20 }}>
+                <div
+                  key={shelf.id}
+                  className={`section ${isDefault ? "section-default" : "section-custom"}`}
+                  style={{ position: "relative", paddingTop: 20 }}
+                >
+                  {/* Default shelf badge */}
+                  {isDefault && <span className="shelf-default-badge">Default</span>}
 
-                  {/* Section title — shows rename input when editing a non-default shelf */}
+                  {/* Title or rename input */}
                   {renamingShelfId === shelf.id ? (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                       <input
@@ -266,151 +283,200 @@ const Library: React.FC = () => {
                     <div className="section-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       {shelf.name}
                       {shelf.shared && (
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          background: "#3a5a8b",
-                          color: "#fff",
-                          borderRadius: 12,
-                          padding: "2px 9px",
-                          letterSpacing: "0.03em",
-                        }}>
-                          Shared
-                        </span>
+                        <span className="shelf-shared-badge">Shared</span>
                       )}
                     </div>
                   )}
 
-                  {/* Share button (hidden for default shelves) */}
-                  {!isDefaultShelf(shelf.name) && (
+                  {/* Action buttons — top right */}
+                  <div className="shelf-action-btns">
+                    {!isDefault && (
+                      <button
+                        className="share-bookshelf-btn"
+                        onClick={() => openShareModal(shelf.id)}
+                      >
+                        Share
+                      </button>
+                    )}
                     <button
-                      className="share-bookshelf-btn"
-                      onClick={() => openShareModal(shelf.id)}
+                      onClick={() => {
+                        const entering = editingShelfId !== shelf.id;
+                        setEditingShelfId(entering ? shelf.id : null);
+                        setEditPage(shelf.id, 0);
+                        if (entering && !isDefault) {
+                          setRenamingShelfId(shelf.id);
+                          setRenameValue(shelf.name);
+                        } else {
+                          setRenamingShelfId(null);
+                          setRenameValue("");
+                        }
+                      }}
+                      className="edit-bookshelf-btn"
                     >
-                      Share
+                      {isEditing ? "Done" : "Edit"}
                     </button>
-                  )}
+                    {/* Delete only for custom shelves */}
+                    {!isDefault && (
+                      <button
+                        onClick={() =>
+                          shelf.shared
+                            ? setDeleteConfirmShelf(shelf)
+                            : handleDeleteShelf(shelf.id)
+                        }
+                        className="delete-bookshelf-btn"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
 
-                  {/* Edit button */}
-                  <button
-                    onClick={() => {
-                      const entering = editingShelfId !== shelf.id;
-                      setEditingShelfId(entering ? shelf.id : null);
-                      if (entering && !isDefaultShelf(shelf.name)) {
-                        setRenamingShelfId(shelf.id);
-                        setRenameValue(shelf.name);
-                      } else {
-                        setRenamingShelfId(null);
-                        setRenameValue("");
-                      }
-                    }}
-                    className="edit-bookshelf-btn"
-                    style={{ position: "absolute", top: 10, right: 120 }}
-                  >
-                    {editingShelfId === shelf.id ? "Done" : "Edit"}
-                  </button>
-
-                  {/* Delete button (greyed out for default shelves)*/}
-                  <button
-                    onClick={() => {
-                      if (!isDefaultShelf(shelf.name)) {
-                        handleDeleteShelf(shelf.id);
-                      }
-                    }}
-                    className="delete-bookshelf-btn"
-                    title={
-                      isDefaultShelf(shelf.name)
-                        ? "Default shelves cannot be deleted"
-                        : "Delete Bookshelf"
-                      }
-                    disabled={isDefaultShelf(shelf.name)}
-                  >
-                    Delete Bookshelf
-                  </button>
-
-                  {/* Multi-row shelf — each row gets its own plank */}
-                  <div className="bookshelf-rows">
-                    {rows.map((rowBooks, rowIdx) => (
-                      <div key={rowIdx} className="bookshelf-shelf">
-                        {rowBooks.map((shelfBook) => (
-                          <div
-                            key={shelfBook.id}
-                            style={{ position: "relative" }}
-                            >
-                            <div
-                              title={shelfBook.book.name}
-                              className="book"
-                              onClick={() => router.push(`/books/${shelfBook.book.id}`)}
-                            >
+                  {/* Edit mode: paginated list view with title + author */}
+                  {isEditing ? (
+                    <div className="shelf-edit-list">
+                      {shelf.shelfBooks.length === 0 ? (
+                        <div className="shelf-edit-empty">No books on this shelf yet.</div>
+                      ) : (
+                        pagedEditBooks.map((shelfBook) => (
+                          <div key={shelfBook.id} className="shelf-edit-row">
+                            <div className="shelf-edit-cover">
                               {shelfBook.book.coverUrl ? (
                                 <img
                                   src={shelfBook.book.coverUrl}
                                   alt={shelfBook.book.name}
-                                  style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    borderRadius: 3,
-                                   }}
+                                  className="shelf-edit-cover-img"
                                 />
                               ) : (
-                                shelfBook.book.name.split(" ").slice(0, 2).join(" ")
+                                <div className="shelf-edit-cover-placeholder">
+                                  {shelfBook.book.name.split(" ").slice(0, 2).join(" ")}
+                                </div>
                               )}
                             </div>
-
-                            {/* DELETE BUTTON (only in edit mode) */}
-                            {editingShelfId === shelf.id && (
+                            <div className="shelf-edit-info">
+                              <div className="shelf-edit-title">{shelfBook.book.name}</div>
+                              <div className="shelf-edit-author">
+                                {shelfBook.book.authors?.join(", ") ?? "Unknown author"}
+                              </div>
+                            </div>
+                            <div className="shelf-edit-actions">
                               <button
-                                className="delete-book-btn"
-                                onClick={(e) => {e.stopPropagation(); handleRemoveBook(shelf.id, shelfBook.book.id); }}
+                                className="shelf-edit-view-btn"
+                                onClick={() => router.push(`/books/${shelfBook.book.id}`)}
                               >
-                                ×
+                                View
                               </button>
-                            )}
+                              <button
+                                className="shelf-edit-remove-btn"
+                                onClick={() => handleRemoveBook(shelf.id, shelfBook.book.id)}
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </div>
-                        ))}
+                        ))
+                      )}
 
-                        {/* Add button only on the last row */}
-                        {rowIdx === rows.length - 1 && (
-                          <div
-                            className="book add-book-btn"
-                            onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
-                          >
-                            +
+                      {/* Edit list footer: pagination + add */}
+                      <div className="shelf-edit-footer">
+                        {editTotalPages > 1 && (
+                          <div className="shelf-pagination">
+                            <button
+                              className="pagination-btn"
+                              onClick={() => setEditPage(shelf.id, Math.max(0, editPage - 1))}
+                              disabled={editPage === 0}
+                            >
+                              ← Prev
+                            </button>
+                            {Array.from({ length: editTotalPages }, (_, i) => (
+                              <button
+                                key={i}
+                                className={`pagination-dot ${i === editPage ? "active" : ""}`}
+                                onClick={() => setEditPage(shelf.id, i)}
+                              >
+                                {i + 1}
+                              </button>
+                            ))}
+                            <button
+                              className="pagination-btn"
+                              onClick={() => setEditPage(shelf.id, Math.min(editTotalPages - 1, editPage + 1))}
+                              disabled={editPage === editTotalPages - 1}
+                            >
+                              Next →
+                            </button>
                           </div>
                         )}
+                        <button
+                          className="shelf-edit-add-btn"
+                          onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                        >
+                          + Add a book
+                        </button>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Footer row: count + Members + View Bookshelf */}
-                  <div className="shelf-footer">
-                    <div className="bookshelf-count">
-                      {shelf.shelfBooks.length} books{hasMore && ` · showing ${MAX_BOOKS_DISPLAYED}`}
                     </div>
-                    <button
-                      className="view-shelf-btn"
-                      onClick={() => setMembersModalShelf(shelf)}
-                    >
-                      👥 {shelf.shared ? shelf.memberUsernames?.length ?? 0 : 1} member{(!shelf.shared || (shelf.memberUsernames?.length ?? 0) === 1) ? "" : "s"}
-                    </button>
-                    <button
-                      className="view-shelf-btn"
-                      onClick={() => router.push(`/library/${shelf.id}`)}
-                    >
-                      View Bookshelf →
-                    </button>
-                  </div>
+                  ) : (
+                    /* Normal plank view */
+                    <div className="bookshelf-rows">
+                      {rows.map((rowBooks, rowIdx) => (
+                        <div key={rowIdx} className="bookshelf-shelf">
+                          {rowBooks.map((shelfBook) => (
+                            <div key={shelfBook.id} style={{ position: "relative" }}>
+                              <div
+                                title={shelfBook.book.name}
+                                className="book"
+                                style={{ background: "#3a5a8b", cursor: "pointer" }}
+                                onClick={() => router.push(`/books/${shelfBook.book.id}`)}
+                              >
+                                {shelfBook.book.coverUrl ? (
+                                  <img
+                                    src={shelfBook.book.coverUrl}
+                                    alt={shelfBook.book.name}
+                                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 3 }}
+                                  />
+                                ) : (
+                                  shelfBook.book.name.split(" ").slice(0, 2).join(" ")
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {rowIdx === rows.length - 1 && (
+                            <div
+                              className="book add-book-btn"
+                              onClick={() => router.push(`/discover?shelfId=${shelf.id}`)}
+                            >
+                              +
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Footer — normal mode only */}
+                  {!isEditing && (
+                    <div className="shelf-footer">
+                      <div className="bookshelf-count">
+                        {shelf.shelfBooks.length} books{hasMore && ` · showing ${MAX_BOOKS_DISPLAYED}`}
+                      </div>
+                      <button
+                        className="view-shelf-btn"
+                        onClick={() => setMembersModalShelf(shelf)}
+                      >
+                        👥 {shelf.shared ? (shelf.memberUsernames?.length ?? 0) : 1} member{(!shelf.shared || (shelf.memberUsernames?.length ?? 0) <= 1) ? "" : "s"}
+                      </button>
+                      <button
+                        className="view-shelf-btn"
+                        onClick={() => router.push(`/library/${shelf.id}`)}
+                      >
+                        View Bookshelf →
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
 
             {/* Create Shelf */}
             <div style={{ textAlign: "center", marginTop: 16 }}>
-              <button
-                className="primary-btn"
-                onClick={() => setModalIsOpen(true)}
-              >
+              <button className="primary-btn" onClick={() => setModalIsOpen(true)}>
                 + Create New Shelf
               </button>
             </div>
@@ -419,45 +485,26 @@ const Library: React.FC = () => {
 
         {(loadingPath || loadingData) && (
           <div className="loader-center">
-            <RotatingLines
-              strokeColor="black"
-              strokeWidth="10"
-              animationDuration="0.6"
-              width="50"
-              visible={true}
-            />
+            <RotatingLines strokeColor="black" strokeWidth="10" animationDuration="0.6" width="50" visible={true} />
           </div>
         )}
-
         <ToastContainer />
       </div>
 
-
+      {/* Create shelf modal */}
       {modalIsOpen && (
-        <div
-          className="modal-overlay"
-          onClick={() => setModalIsOpen(false)}
-          >
+        <div className="modal-overlay" onClick={() => setModalIsOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create new shelf</h2>
-
             <input
               className="modal-input"
               value={shelfName}
               onChange={(e) => setShelfName(e.target.value)}
               placeholder="Shelf name"
             />
-
             <div className="modal-actions">
-              <button className="primary-btn" onClick={handleCreateNewShelf}>
-                Save
-              </button>
-              <button
-                className="primary-btn"
-                onClick={() => setModalIsOpen(false)}
-              >
-                Cancel
-              </button>
+              <button className="primary-btn" onClick={handleCreateNewShelf}>Save</button>
+              <button className="primary-btn" onClick={() => setModalIsOpen(false)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -468,51 +515,70 @@ const Library: React.FC = () => {
         <div className="modal-overlay" onClick={() => setMembersModalShelf(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{membersModalShelf.name} — Members</h2>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {(membersModalShelf.memberUsernames ?? []).map((username, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "8px 10px",
-                    background: "#f5f5f5",
-                    borderRadius: 8,
-                  }}
-                >
-                  <div
-                    style={{
-                      background: membersModalShelf.shared ? "#3a5a8b" : "#2e7d32",
-                      borderRadius: "50%",
-                      width: 34,
-                      height: 34,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 600,
-                      color: "#fff",
-                      flexShrink: 0,
-                      fontSize: 13,
-                    }}
-                  >
-                    {username.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>{username}</div>
-                  {!membersModalShelf.shared && (
-                    <div style={{ fontSize: 12, color: "#777", marginLeft: 4 }}>Owner</div>
-                  )}
-                </div>
-              ))}
-
-              {(membersModalShelf.memberUsernames ?? []).length === 0 && (
+              {(membersModalShelf.memberUsernames ?? []).length === 0 ? (
                 <div style={{ color: "#777", fontSize: 14 }}>No members yet.</div>
+              ) : (
+                (membersModalShelf.memberUsernames ?? []).map((username, idx) => (
+                  <div key={idx} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "8px 10px", background: "#f5f5f5", borderRadius: 8,
+                  }}>
+                    <div style={{
+                      background: membersModalShelf.shared ? "#3a5a8b" : "#2e7d32",
+                      borderRadius: "50%", width: 34, height: 34,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontWeight: 600, color: "#fff", flexShrink: 0, fontSize: 13,
+                    }}>
+                      {username.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{username}</div>
+                    {!membersModalShelf.shared && (
+                      <div style={{ fontSize: 12, color: "#777", marginLeft: 4 }}>Owner</div>
+                    )}
+                  </div>
+                ))
               )}
             </div>
-
             <div className="modal-actions" style={{ marginTop: 16 }}>
               <button className="primary-btn" onClick={() => setMembersModalShelf(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm delete shared shelf modal */}
+      {deleteConfirmShelf !== null && (
+        <div className="modal-overlay" onClick={() => setDeleteConfirmShelf(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            {(deleteConfirmShelf.memberUsernames?.length ?? 0) <= 1 ? (
+              <>
+                <h2>Delete shared shelf?</h2>
+                <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+                  You are the last member. Deleting will permanently remove <strong>{deleteConfirmShelf.name}</strong>.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2>Leave shared shelf?</h2>
+                <p style={{ fontSize: 14, color: "#555", marginBottom: 16 }}>
+                  This will remove <strong>{deleteConfirmShelf.name}</strong> from your library. Other members will not be affected.
+                </p>
+              </>
+            )}
+            <div className="modal-actions">
+              <button
+                className="delete-bookshelf-btn"
+                style={{ position: "static" }}
+                onClick={async () => {
+                  const id = deleteConfirmShelf.id;
+                  setDeleteConfirmShelf(null);
+                  await handleLeaveSharedShelf(id);
+                }}
+              >
+                {(deleteConfirmShelf.memberUsernames?.length ?? 0) <= 1 ? "Delete shelf" : "Leave shelf"}
+              </button>
+              <button className="primary-btn" onClick={() => setDeleteConfirmShelf(null)}>Cancel</button>
             </div>
           </div>
         </div>
@@ -523,7 +589,6 @@ const Library: React.FC = () => {
         <div className="modal-overlay" onClick={closeShareModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Invite a friend to this shelf</h2>
-
             <input
               className="modal-input"
               value={shareSearchValue}
@@ -532,71 +597,48 @@ const Library: React.FC = () => {
               style={{ marginBottom: 12 }}
               autoFocus
             />
-
             <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto" }}>
-              {friends
-                .filter((f) =>
-                  !shareSearchValue.trim() ||
-                  f.username?.toLowerCase().includes(shareSearchValue.trim().toLowerCase())
-                )
-                .map((friend) => (
-                  <div
-                    key={friend.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 10px",
-                      background: "#f5f5f5",
-                      borderRadius: 8,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div
-                        style={{
-                          background: "#f4c400",
-                          borderRadius: "50%",
-                          width: 34,
-                          height: 34,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 600,
-                          flexShrink: 0,
-                          fontSize: 13,
-                        }}
-                      >
-                        {friend.username?.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{friend.username}</div>
-                        {friend.name && (
-                          <div style={{ fontSize: 12, color: "#555" }}>{friend.name}</div>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      className="primary-btn"
-                      onClick={() => handleInviteToShelf(friend.id, friend.username ?? "")}
-                    >
-                      Invite
-                    </button>
-                  </div>
-                ))}
-
-              {friends.length === 0 && (
+              {friends.length === 0 ? (
                 <div style={{ color: "#777", fontSize: 14 }}>You have no friends to invite yet.</div>
-              )}
-
-              {friends.length > 0 &&
-                friends.filter((f) =>
+              ) : friends.filter((f) =>
                   !shareSearchValue.trim() ||
                   f.username?.toLowerCase().includes(shareSearchValue.trim().toLowerCase())
-                ).length === 0 && (
-                  <div style={{ color: "#777", fontSize: 14 }}>No friends match your search.</div>
-                )}
+                ).length === 0 ? (
+                <div style={{ color: "#777", fontSize: 14 }}>No friends match your search.</div>
+              ) : (
+                friends
+                  .filter((f) =>
+                    !shareSearchValue.trim() ||
+                    f.username?.toLowerCase().includes(shareSearchValue.trim().toLowerCase())
+                  )
+                  .map((friend) => (
+                    <div key={friend.id} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "8px 10px", background: "#f5f5f5", borderRadius: 8,
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{
+                          background: "#f4c400", borderRadius: "50%",
+                          width: 34, height: 34, display: "flex", alignItems: "center",
+                          justifyContent: "center", fontWeight: 600, flexShrink: 0, fontSize: 13,
+                        }}>
+                          {friend.username?.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>{friend.username}</div>
+                          {friend.name && <div style={{ fontSize: 12, color: "#555" }}>{friend.name}</div>}
+                        </div>
+                      </div>
+                      <button
+                        className="primary-btn"
+                        onClick={() => handleInviteToShelf(friend.id, friend.username ?? "")}
+                      >
+                        Invite
+                      </button>
+                    </div>
+                  ))
+              )}
             </div>
-
             <div className="modal-actions" style={{ marginTop: 16 }}>
               <button className="primary-btn" onClick={closeShareModal}>Close</button>
             </div>
