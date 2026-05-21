@@ -282,9 +282,6 @@ const Library: React.FC = () => {
                   ) : (
                     <div className="section-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       {shelf.name}
-                      {shelf.shared && (
-                        <span className="shelf-shared-badge">Shared</span>
-                      )}
                     </div>
                   )}
 
