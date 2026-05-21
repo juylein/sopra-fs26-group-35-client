@@ -193,7 +193,14 @@ const Book: React.FC = () => {
 
       <div className="main-content">
         <div style={{ maxWidth: 800, margin: "0 auto", padding: 20 }}>
-          
+          <button
+            className="back-btn"
+            style={{ marginBottom: 18 }}
+            onClick={() => router.back()}
+          >
+            ← Back
+          </button>
+
           <div style={{ display: "flex", gap: 20 }}>
             
             {book.coverUrl ? (
