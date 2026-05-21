@@ -119,8 +119,12 @@ const ShelfPage: React.FC = () => {
 
             {/* Header */}
             <div style={{ padding: 0, border: "none", background: "transparent" }}>
-              <button className="back-btn" onClick={() => router.back()}>← Back to Library</button>
-              <div className="library-title" style={{ marginTop: 12 }}>{shelfName}</div>
+              <button className="back-btn" onClick={() => router.push("/library")}>
+                ← Back to Library
+              </button>
+              <div className="library-title" style={{ marginTop: 12 }}>
+                {shelfName}
+              </div>
               {!loadingData && (
                 <p style={{ fontSize: 16, color: "#555", margin: 0 }}>
                   {allBooks.length} book{allBooks.length !== 1 ? "s" : ""}
